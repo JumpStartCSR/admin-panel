@@ -1,71 +1,23 @@
 "use client";
-import React from "react";
-import { Table, Button, Input, Dropdown, Tabs, Space } from "antd";
+import React, { useState } from "react";
+import {
+  Table,
+  Button,
+  Input,
+  Dropdown,
+  Menu,
+  Checkbox,
+  Space,
+  Tabs,
+} from "antd";
 import {
   PlusOutlined,
   SearchOutlined,
-  MoreOutlined,
   DownloadOutlined,
   CloseOutlined,
-  DownOutlined
+  DownOutlined,
 } from "@ant-design/icons";
-import type { TableProps, MenuProps, TabsProps } from "antd";
-
-
-const tabItems: TabsProps["items"] = [
-  {
-    key: "1",
-    label: "All",
-    children: "",
-  },
-  {
-    key: "2",
-    label: "Admins",
-    children: "",
-  },
-  {
-    key: "3",
-    label: "Group Managers",
-    children: "",
-  },
-  {
-    key: "4",
-    label: "Individual Users",
-    children: "",
-  },
-];
-
-const statusFilterItems: MenuProps["items"] = [
-  {
-    label: (
-      <a
-        href="https://www.antgroup.com"
-        target="_blank"
-        rel="noopener noreferrer">
-        1st menu item
-      </a>
-    ),
-    key: "0",
-  },
-  {
-    label: (
-      <a
-        href="https://www.aliyun.com"
-        target="_blank"
-        rel="noopener noreferrer">
-        2nd menu item
-      </a>
-    ),
-    key: "1",
-  },
-  {
-    type: "divider",
-  },
-  {
-    label: "3rd menu item",
-    key: "3",
-  },
-];
+import type { TableProps, TabsProps } from "antd";
 
 interface DataType {
   key: string;
@@ -101,181 +53,124 @@ const data: DataType[] = [
     name: "Zoe Denver",
     email: "zoe@org.com",
     roles: ["User"],
-    status: "Deactivaded",
+    status: "Deactivated",
     dateAdded: "15 Nov, 2024",
     lastActive: "3 minutes ago",
   },
 ];
 
 const Members: React.FC = () => {
-  const [selectedRecord, setRecord] = React.useState({});
-  console.log(selectedRecord);
-  const [filteredInfo, setFilteredInfo] = React.useState({});
-  const [currentTab, setTab] = React.useState("1");
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
-  const filteredData = data.filter(item => {
-    const tabCondition =
-      currentTab === "2"
-        ? item.roles.includes("Admin")
-        : currentTab === "3"
-        ? item.roles.includes("Group Manager")
-        : currentTab === "4"
-        ? item.roles.includes("User")
-        : true;
-    const searchCondition = searchQuery
-      ? item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    return tabCondition && searchCondition
-  })
+  const handleMenuClick =
+    (
+      setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>,
+      selectedItems: string[]
+    ) =>
+    (e: any) => {
+      const { key } = e;
+      const updatedItems = selectedItems.includes(key)
+        ? selectedItems.filter((item) => item !== key)
+        : [...selectedItems, key];
+      setSelectedItems(updatedItems);
+    };
 
+  const statusMenu = (
+    <Menu>
+      {["Onboarded", "Pending", "Deactivated"].map((status) => (
+        <Menu.Item
+          key={status}
+          onClick={handleMenuClick(setSelectedStatuses, selectedStatuses)}>
+          <Checkbox checked={selectedStatuses.includes(status)}>
+            {status}
+          </Checkbox>
+        </Menu.Item>
+      ))}
+    </Menu>
+  );
 
-  const onTabChange = (key: string) => {
-    setTab(key)
-    console.log(currentTab);
+  const roleMenu = (
+    <Menu>
+      {["Admin", "Group Manager", "User"].map((role) => (
+        <Menu.Item
+          key={role}
+          onClick={handleMenuClick(setSelectedRoles, selectedRoles)}>
+          <Checkbox checked={selectedRoles.includes(role)}>{role}</Checkbox>
+        </Menu.Item>
+      ))}
+    </Menu>
+  );
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedStatuses([]);
+    setSelectedRoles([]);
   };
 
-    const onTableChange: NonNullable<TableProps<DataType>["onChange"]> = (
-      pagination,
-      filters,
-      sorter
-    ) => {
-      console.log("Various parameters", pagination, filters, sorter);
-      setFilteredInfo(filters);
-    };
+  const filteredData = data.filter((item) => {
+    const matchesSearch = item.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      selectedStatuses.length === 0 || selectedStatuses.includes(item.status);
+    const matchesRole =
+      selectedRoles.length === 0 ||
+      selectedRoles.some((role) => item.roles.includes(role));
+    return matchesSearch && matchesStatus && matchesRole;
+  });
 
-    const clearFilters = () => {
-      setFilteredInfo({});
-    };
-
-  // Menu Items
-  const items: MenuProps["items"] = [
-    {
-      label: "Edit Access",
-      key: "1",
-    },
-    {
-      label: "Deactivate Account",
-      key: "2",
-    },
-  ];
-
-  // Columns for Table
   const columns: TableProps<DataType>["columns"] = [
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      render: (text) => <a>{text}</a>,
-      sorter: (a, b) => a.name.localeCompare(b.name),
-      sortDirections: ["descend"],
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-      sorter: (a, b) => a.email.localeCompare(b.email),
-      sortDirections: ["descend"],
-    },
+    { title: "Name", dataIndex: "name", key: "name" },
+    { title: "Email", dataIndex: "email", key: "email" },
     {
       title: "Role",
-      dataIndex: "role",
-      key: "role",
-      render: (_, { roles }) => (
-        <>
-          {roles.map((role) => {
-            return role;
-          })}
-        </>
-      ),
-      sorter: (a, b) => a.roles[0].localeCompare(b.roles[0]),
-      sortDirections: ["descend"],
+      dataIndex: "roles",
+      key: "roles",
+      render: (roles) => roles.join(", "),
     },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      sorter: (a, b) => a.status.localeCompare(b.status),
-      sortDirections: ["descend"],
-    },
-    {
-      title: "Date Added",
-      dataIndex: "dateAdded",
-      key: "dateAdded",
-      sorter: (a, b) => a.lastActive.localeCompare(b.lastActive),
-      sortDirections: ["descend"],
-    },
-    {
-      title: "Last Active",
-      dataIndex: "lastActive",
-      key: "lastActive",
-      sorter: (a, b) => a.dateAdded.localeCompare(b.dateAdded),
-      sortDirections: ["descend"],
-    },
-    {
-      title: "Action",
-      key: "action",
-      render: (_, record) => {
-        const onClick: MenuProps["onClick"] = ({ key }) => {
-          console.log(`Click on item ${key} in ${record.name}`);
-          setRecord(record);
-        };
-
-        return (
-          <Dropdown menu={{ items, onClick }}>
-            <Button type="text">
-              <MoreOutlined />
-            </Button>
-          </Dropdown>
-        );
-      },
-    },
+    { title: "Status", dataIndex: "status", key: "status" },
+    { title: "Date Added", dataIndex: "dateAdded", key: "dateAdded" },
+    { title: "Last Active", dataIndex: "lastActive", key: "lastActive" },
   ];
+
   return (
     <>
       <div className="title flex items-center justify-between mb-4">
-        <div>
-          <h2>Manage Members</h2>
-        </div>
+        <h2>Manage Members</h2>
         <div className="gap-2 flex">
-          <Button>
-            <DownloadOutlined />
-            Export
-          </Button>
-          <Button>
-            <PlusOutlined />
-            Invite
-          </Button>
+          <Button icon={<DownloadOutlined />}>Export</Button>
+          <Button icon={<PlusOutlined />}>Invite</Button>
         </div>
       </div>
-      <Tabs defaultActiveKey="1" items={tabItems} onChange={onTabChange} />
-      <div>
-        <div className="flex items-center gap-1 mb-4">
-          <Input
-            className="max-w-72 mr-4"
-            placeholder="Search members"
-            prefix={<SearchOutlined />}
-          />
-          <Dropdown className="cursor-pointer" menu={{ items }} trigger={["click"]}>
-            <div onClick={(e) => e.preventDefault()}>
-              <Space>
-                Status
-                <DownOutlined />
-              </Space>
-            </div>
-          </Dropdown>
-          <Button type="text" onClick={clearFilters}>
-            <CloseOutlined />
-            Clear All
-          </Button>
-        </div>
-        <Table<DataType>
-          className="overflow-x-scroll"
-          columns={columns}
-          dataSource={filteredData}
-          onChange={onTableChange}
+      <div className="flex items-center mb-4 gap-2">
+        <Input
+          placeholder="Search Members"
+          prefix={<SearchOutlined />}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ maxWidth: 300 }}
         />
+        <Dropdown overlay={statusMenu} trigger={["click"]}>
+          <Button type="text">
+            Status <DownOutlined />
+          </Button>
+        </Dropdown>
+        <Dropdown overlay={roleMenu} trigger={["click"]}>
+          <Button type="text">
+            Role <DownOutlined />
+          </Button>
+        </Dropdown>
+        <Button type="text" onClick={clearFilters} icon={<CloseOutlined />}>
+          Clear Filters
+        </Button>
       </div>
+      <Table<DataType>
+        columns={columns}
+        dataSource={filteredData}
+        rowKey="key"
+      />
     </>
   );
 };

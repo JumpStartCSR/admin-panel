@@ -1,39 +1,40 @@
 "use client";
 import React from "react";
-import { Breadcrumb, Layout, Menu, theme, ConfigProvider } from "antd";
+import { Breadcrumb, Layout, ConfigProvider, theme } from "antd";
 import Header from "../components/header";
 import Sider from "../components/sider";
 import Members from "./member";
+import Groups from "./group";
+import Dashboard from "./dashboard";
 
 const { Content } = Layout;
 
-/**
- * request:
- * 1. standardized typography
- *
- */
-
 const App: React.FC = () => {
-  const [selectedKey, setSelectedKey] = React.useState<string | null>(
-    "members"
+  const [selectedKey, setSelectedKey] = React.useState<string>(
+    "dashboard"
   );
 
   return (
     <ConfigProvider
       theme={{
+        algorithm: theme.defaultAlgorithm, 
+        token: {
+          colorBgContainer: "#ffffff",
+        },
         components: {
           Layout: {
             headerBg: "#ffffff",
             siderBg: "#ffffff",
             contentBg: "#ffffff",
             bodyBg: "#ffffff",
+            colorBgLayout: "#ffffff",
           },
         },
       }}>
       <Layout className="h-screen">
         <Header />
         <Layout>
-          <Sider onKeyChange={setSelectedKey} />
+          <Sider selectedkey={selectedKey} onKeyChange={setSelectedKey} />
           <Layout style={{ padding: "0 24px 24px" }}>
             <Breadcrumb
               items={[{ title: "Home" }, { title: "List" }, { title: "App" }]}
@@ -45,7 +46,15 @@ const App: React.FC = () => {
                 margin: 0,
                 minHeight: 280,
               }}>
-              {selectedKey == "members" ? <Members /> : <></>}
+              {selectedKey == "members" ? (
+                <Members />
+              ) : selectedKey == "groups" ? (
+                <Groups />
+              ) : selectedKey == "dashboard" ? (
+                <Dashboard onKeyChange={setSelectedKey} />
+              ) : (
+                <></>
+              )}
             </Content>
           </Layout>
         </Layout>
