@@ -34,14 +34,17 @@ const groupsData = [
   },
 ];
 
-const Dashboard: React.FC<{ onKeyChange: (key: string) => void }> = ({
-  onKeyChange,
-}) => {
-  const userName = "User";
+interface DashboardProps {
+  onKeyChange: (key: string) => void;
+  user: { firstname: string; lastname: string };
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
+  const userName = user.firstname;
 
   return (
     <>
-      <h2>Welcome Home, {userName}!</h2>
+      <h1>Welcome Home, {userName}!</h1>
       <div className="title flex items-center justify-between mt-8 mb-4">
         <div>
           <div className="flex items-center gap-3">
@@ -71,8 +74,7 @@ const Dashboard: React.FC<{ onKeyChange: (key: string) => void }> = ({
                 alignItems: "center",
                 borderRadius: "8px",
               }}
-              onClick={() => onKeyChange("groups")} // Handle card click
-            >
+              onClick={() => onKeyChange("groups")}>
               <Space
                 style={{ display: "flex", alignItems: "center" }}
                 size="large">
@@ -80,11 +82,11 @@ const Dashboard: React.FC<{ onKeyChange: (key: string) => void }> = ({
                   style={{
                     width: "48px",
                     height: "48px",
-                    backgroundColor: "#e6f7ff", // Light blue background
+                    backgroundColor: "#e6f7ff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    borderRadius: "8px", // Rounded corners
+                    borderRadius: "8px",
                   }}>
                   <ProductOutlined
                     style={{ fontSize: "24px", color: "#1677ff" }}

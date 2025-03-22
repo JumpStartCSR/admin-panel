@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Input, Button, Form, Typography } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { useAuth } from "../context/auth-context";
 import { useRouter } from "next/navigation";
 
 const { Title } = Typography;
@@ -9,18 +10,21 @@ const { Title } = Typography;
 const SignIn: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
-  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
+  const { login } = useAuth();
+  const router = useRouter(); // ✅ Get the router
 
   const onFinish = async (values: any) => {
     setLoading(true);
-    setErrorMessage(""); // reset error
+    setErrorMessage("");
     try {
       const { username, password } = values;
 
-      // Mock login logic
+      // ✅ Mock login
       if (username === "admin" && password === "password") {
-        localStorage.setItem("token", "mock-jwt-token");
+        login({ firstname: "William", lastname: "Wang" });
+
+        // ✅ Redirect to root after login
         router.push("/");
       } else {
         throw new Error("Invalid credentials");

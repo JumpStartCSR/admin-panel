@@ -6,21 +6,21 @@ import Sider from "../components/sider";
 import Members from "./member";
 import Groups from "./group";
 import Dashboard from "./dashboard";
+import { useAuth } from "../context/auth-context";
 
 const { Content } = Layout;
 
 const App: React.FC = () => {
-  const [selectedKey, setSelectedKey] = React.useState<string>(
-    "dashboard"
-  );
+  const { user, isLoggedIn } = useAuth();
+  const [selectedKey, setSelectedKey] = React.useState<string>("dashboard");
+
+  if (!isLoggedIn) return null; // or a loading indicator
 
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.defaultAlgorithm, 
-        token: {
-          colorBgContainer: "#ffffff",
-        },
+        algorithm: theme.defaultAlgorithm,
+        token: { colorBgContainer: "#ffffff" },
         components: {
           Layout: {
             headerBg: "#ffffff",
@@ -36,24 +36,17 @@ const App: React.FC = () => {
         <Layout>
           <Sider selectedkey={selectedKey} onKeyChange={setSelectedKey} />
           <Layout style={{ padding: "0 24px 24px" }}>
-            <Breadcrumb
+            {/* <Breadcrumb
               items={[{ title: "Home" }, { title: "List" }, { title: "App" }]}
               style={{ margin: "16px 0" }}
-            />
-            <Content
-              style={{
-                padding: 24,
-                margin: 0,
-                minHeight: 280,
-              }}>
-              {selectedKey == "members" ? (
+            /> */}
+            <Content style={{ padding: 24, margin: 0, minHeight: 280 }}>
+              {selectedKey === "members" ? (
                 <Members />
-              ) : selectedKey == "groups" ? (
+              ) : selectedKey === "groups" ? (
                 <Groups />
-              ) : selectedKey == "dashboard" ? (
-                <Dashboard onKeyChange={setSelectedKey} />
               ) : (
-                <></>
+                <Dashboard onKeyChange={setSelectedKey} user={user!} />
               )}
             </Content>
           </Layout>

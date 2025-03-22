@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AntdRegistry } from '@ant-design/nextjs-registry';
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { AuthProvider } from "./context/auth-context";
 
 export const metadata: Metadata = {
   title: "Holmz Admin Panel",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AntdRegistry>{children}</AntdRegistry>
+        <AntdRegistry>
+          <AuthProvider>{children}</AuthProvider>
+        </AntdRegistry>
       </body>
     </html>
   );

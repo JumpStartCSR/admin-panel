@@ -1,21 +1,31 @@
 "use client";
 import React from "react";
-import Image from "next/image"; 
-import { Layout, Button, ConfigProvider, Input } from "antd";
-import { SearchOutlined, BellOutlined, UserOutlined } from "@ant-design/icons";
+import Image from "next/image";
+import { Layout, Button, Input, Dropdown, Menu } from "antd";
+import {
+  SearchOutlined,
+  BellOutlined,
+  UserOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
+import { useAuth } from "../context/auth-context";
 
-const HeaderAnts = Layout.Header
+const HeaderAnts = Layout.Header;
 
 const Header: React.FC = () => {
+  const { logout } = useAuth();
+
+  const menu = (
+    <Menu>
+      <Menu.Item key="signout" icon={<LogoutOutlined />} onClick={logout}>
+        Sign Out
+      </Menu.Item>
+    </Menu>
+  );
+
   return (
     <HeaderAnts className="flex items-center justify-between border-b-2 border-b-gray-100">
       <div className="flex items-center">
-        {/* <Button
-            style={{ width: "40px", height: "40px" }}
-            type="text"
-            shape="circle">
-            <MenuOutlined style={{ fontSize: "20px" }} />
-          </Button> */}
         <Image
           className="pt-2"
           src="/logo.png"
@@ -42,9 +52,12 @@ const Header: React.FC = () => {
           shape="circle">
           <BellOutlined style={{ fontSize: "20px" }} />
         </Button>
-        <Button type="primary" shape="circle">
-          <UserOutlined />
-        </Button>
+
+        <Dropdown overlay={menu} trigger={["click"]}>
+          <Button type="primary" shape="circle">
+            <UserOutlined />
+          </Button>
+        </Dropdown>
       </div>
     </HeaderAnts>
   );
