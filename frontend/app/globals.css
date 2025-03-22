@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+.ant-layout-sider-children ul {
+  height: 100vh!important;
+}
+
+.ant-layout-sider-trigger {
+  border: 1px solid rgb(220, 220, 220) !important;
+  background-color: #ececec!important;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 6px;
+}
+  ::-webkit-scrollbar-track {
+  background: #ffffff; 
+}
+  ::-webkit-scrollbar-thumb {
+  background: #888; 
+    border-radius:10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  
+  background: #555; 
+} 
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Inter, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color : #111E23
+}
+
+h1 {
+  font-size: 32px;
+  font-style: normal;
+  font-weight: 500;
+}
+
+h2 {
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 500;
+}
+
+h3 {
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 500;
+}
+
+h4 {
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 400;
+}
+
+h5 {
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+}
+
+h6 {
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+p {
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+}
