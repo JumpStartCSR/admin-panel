@@ -12,7 +12,7 @@ const SignIn: React.FC = () => {
   const [form] = Form.useForm();
   const [errorMessage, setErrorMessage] = useState("");
   const { login } = useAuth();
-  const router = useRouter(); // ✅ Get the router
+  const router = useRouter();
 
   const onFinish = async (values: any) => {
     setLoading(true);
@@ -20,11 +20,9 @@ const SignIn: React.FC = () => {
     try {
       const { username, password } = values;
 
-      // ✅ Mock login
       if (username === "admin" && password === "password") {
         login({ firstname: "William", lastname: "Wang" });
 
-        // ✅ Redirect to root after login
         router.push("/");
       } else {
         throw new Error("Invalid credentials");
