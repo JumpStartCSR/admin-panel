@@ -3,9 +3,13 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 interface User {
-  firstname: string;
-  lastname: string;
-  // more fields in the future
+  id: string;
+  username: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  PCG_status?: string;
+  token: string;
 }
 
 interface AuthContextType {
@@ -34,19 +38,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    // restore login state from localStorage
     const stored = localStorage.getItem("user");
     if (stored) {
-      setUser(JSON.parse(stored));
+      try {
+        const parsed: User = JSON.parse(stored);
+        setUser(parsed);
+      } catch {
+        localStorage.removeItem("user");
+      }
     }
 
-    // Redirect unauthenticated users away from protected routes
-    if (!stored && pathname !== "/signin") {
+    const isPublicRoute = pathname === "/signin";
+
+    if (!stored && !isPublicRoute) {
       router.push("/signin");
-    }
-
-    // Redirect authenticated users away from signin page
-    if (stored && pathname === "/signin") {
+    } else if (stored && isPublicRoute) {
       router.push("/");
     }
   }, [pathname, router]);

@@ -4,6 +4,7 @@ import { Input, Button, Form, Typography } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuth } from "../context/auth-context";
 import { useRouter } from "next/navigation";
+import PocketBase from "pocketbase";
 
 const { Title } = Typography;
 
@@ -17,17 +18,38 @@ const SignIn: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     setErrorMessage("");
+
     try {
       const { username, password } = values;
 
-      if (username === "admin" && password === "password") {
-        login({ firstname: "William", lastname: "Wang" });
+      const pb = new PocketBase("https://holmz-backend.pockethost.io");
 
-        router.push("/");
-      } else {
-        throw new Error("Invalid credentials");
-      }
+      // 🔐 Authenticate against PocketBase
+      const userData = await pb
+        .collection("users")
+        .authWithPassword(username, password);
+
+      const user = userData.record;
+
+      // 🧠 Build full avatar URL (optional)
+      const avatarUrl = user.avatar
+        ? `https://holmz-backend.pockethost.io/api/files/users/${user.id}/${user.avatar}`
+        : undefined;
+
+      // ✅ Store user data in your auth context
+      login({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        PCG_status: user.PCG_status,
+        avatar: avatarUrl,
+        token: pb.authStore.token,
+      });
+
+      router.push("/");
     } catch (err) {
+      console.error("Login error:", err);
       setErrorMessage("Invalid username or password.");
     } finally {
       setLoading(false);

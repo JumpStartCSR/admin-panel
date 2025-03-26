@@ -36,11 +36,19 @@ const groupsData = [
 
 interface DashboardProps {
   onKeyChange: (key: string) => void;
-  user: { firstname: string; lastname: string };
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    name: string;
+    avatar?: string;
+    PCG_status?: string;
+    token: string;
+  };
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
-  const userName = user.firstname;
+  const userName = user.username;
 
   return (
     <>
