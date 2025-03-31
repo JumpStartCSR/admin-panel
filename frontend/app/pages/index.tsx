@@ -6,6 +6,7 @@ import Sider from "../components/sider";
 import Members from "./member";
 import Groups from "./group";
 import Dashboard from "./dashboard";
+import Organizations from "./organization";
 import { useAuth } from "../context/auth-context";
 
 const { Content } = Layout;
@@ -45,6 +46,8 @@ const App: React.FC = () => {
                 <Members />
               ) : selectedKey === "groups" ? (
                 <Groups />
+              ) : selectedKey === "organizations" ? (
+                <Organizations user={user!} />
               ) : (
                 <Dashboard onKeyChange={setSelectedKey} user={user!} />
               )}

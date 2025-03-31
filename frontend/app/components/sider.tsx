@@ -16,23 +16,15 @@ import { Breadcrumb, Layout, Menu, theme, ConfigProvider } from "antd";
 const SiderAnts = Layout.Sider;
 
 const items: MenuItem[] = [
-  // {
-  //   key: "workspace-sub",
-  //   label: "Workspace Name",
-  //   icon: <CodeSandboxOutlined />,
-  //   children: [
-  //     { key: "1", label: "Option 1" },
-  //     { key: "2", label: "Option 2" },
-  //     {
-  //       key: "sub1-2",
-  //       label: "Submenu",
-  //       children: [
-  //         { key: "3", label: "Option 3" },
-  //         { key: "4", label: "Option 4" },
-  //       ],
-  //     },
-  //   ],
-  // },
+  {
+    key: "organizations",
+    label: "Organizations",
+    icon: <CodeSandboxOutlined />,
+    // children: [
+    //   { key: "1", label: "Option 1" },
+    //   { key: "2", label: "Option 2" },
+    // ],
+  },
   {
     key: "dashboard",
     icon: <AppstoreOutlined />,

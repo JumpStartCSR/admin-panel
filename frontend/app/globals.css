@@ -14,7 +14,7 @@
   }
 }
 
-.ant-layout-sider-children ul {
+.ant-layout-sider-children > ul {
   height: 100vh!important;
 }
 

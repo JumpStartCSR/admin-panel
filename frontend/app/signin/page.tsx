@@ -24,19 +24,19 @@ const SignIn: React.FC = () => {
 
       const pb = new PocketBase("https://holmz-backend.pockethost.io");
 
-      // 🔐 Authenticate against PocketBase
+      //  Authenticate against PocketBase
       const userData = await pb
         .collection("users")
         .authWithPassword(username, password);
 
       const user = userData.record;
 
-      // 🧠 Build full avatar URL (optional)
+      //  Build full avatar URL (optional)
       const avatarUrl = user.avatar
         ? `https://holmz-backend.pockethost.io/api/files/users/${user.id}/${user.avatar}`
         : undefined;
 
-      // ✅ Store user data in your auth context
+      //  Store user data in your auth context
       login({
         id: user.id,
         username: user.username,
