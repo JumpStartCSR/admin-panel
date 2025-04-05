@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   Button,
@@ -8,16 +8,18 @@ import {
   Menu,
   Checkbox,
   Space,
-  Tabs,
+  Modal,
+  Form,
+  Select,
+  message,
 } from "antd";
 import {
   PlusOutlined,
   SearchOutlined,
-  DownloadOutlined,
   CloseOutlined,
   DownOutlined,
 } from "@ant-design/icons";
-import type { TableProps, TabsProps } from "antd";
+import type { TableProps } from "antd";
 
 interface DataType {
   key: string;
@@ -29,40 +31,82 @@ interface DataType {
   dateAdded: string;
 }
 
-const data: DataType[] = [
-  {
-    key: "1",
-    name: "Jane Doe",
-    email: "jane.doe@org.com",
-    roles: ["Admin"],
-    status: "Onboarded",
-    dateAdded: "15 Nov, 2024",
-    lastActive: "11 minutes ago",
-  },
-  {
-    key: "2",
-    name: "Sam Smith",
-    email: "sam.smith@org.com",
-    roles: ["Group Manager"],
-    status: "Pending",
-    dateAdded: "15 Nov, 2024",
-    lastActive: "32 minutes ago",
-  },
-  {
-    key: "3",
-    name: "Zoe Denver",
-    email: "zoe@org.com",
-    roles: ["User"],
-    status: "Deactivated",
-    dateAdded: "15 Nov, 2024",
-    lastActive: "3 minutes ago",
-  },
-];
-
 const Members: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [data, setData] = useState<DataType[]>([]);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<DataType | null>(null);
+
+  const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
+
+  const fetchMembers = async () => {
+    const res = await fetch("/api/members");
+    const members = await res.json();
+    setData(members);
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const handleAddMember = async (values: any) => {
+    const res = await fetch("/api/members", {
+      method: "POST",
+      body: JSON.stringify(values),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      form.resetFields();
+      setModalVisible(false);
+      fetchMembers();
+    } else {
+      message.error("Failed to add member.");
+    }
+  };
+
+  const handleEdit = (record: DataType) => {
+    setSelectedMember(record);
+    setEditModalVisible(true);
+    editForm.setFieldsValue(record);
+  };
+
+  const handleUpdateMember = async (values: any) => {
+    if (!selectedMember) return;
+    const res = await fetch(`/api/members/${selectedMember.key}`, {
+      method: "PUT",
+      body: JSON.stringify(values),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      setEditModalVisible(false);
+      fetchMembers();
+    } else {
+      message.error("Failed to update member.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedMember) return;
+
+    const res = await fetch(`/api/members/${selectedMember.key}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      setDeleteModalVisible(false);
+      fetchMembers();
+    } else {
+      message.error("Failed to delete member.");
+    }
+  };
 
   const handleMenuClick =
     (
@@ -131,19 +175,38 @@ const Members: React.FC = () => {
       render: (roles) => roles.join(", "),
     },
     { title: "Status", dataIndex: "status", key: "status" },
-    { title: "Date Added", dataIndex: "dateAdded", key: "dateAdded" },
-    { title: "Last Active", dataIndex: "lastActive", key: "lastActive" },
+    { title: "Date Added", dataIndex: "dateadded", key: "dateAdded" },
+    {
+      title: "Controls",
+      key: "controls",
+      render: (_, record) => (
+        <Space>
+          <Button type="link" onClick={() => handleEdit(record)}>
+            Edit
+          </Button>
+          <Button
+            type="link"
+            danger
+            onClick={() => {
+              setSelectedMember(record);
+              setDeleteModalVisible(true);
+            }}>
+            Remove
+          </Button>
+        </Space>
+      ),
+    },
   ];
 
   return (
     <>
       <div className="title flex items-center justify-between mb-4">
         <h2>Manage Members</h2>
-        <div className="gap-2 flex">
-          <Button icon={<DownloadOutlined />}>Export</Button>
-          <Button icon={<PlusOutlined />}>Invite</Button>
-        </div>
+        <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+          Add Member
+        </Button>
       </div>
+
       <div className="flex items-center mb-4 gap-2">
         <Input
           placeholder="Search Members"
@@ -166,11 +229,100 @@ const Members: React.FC = () => {
           Clear Filters
         </Button>
       </div>
+
       <Table<DataType>
         columns={columns}
         dataSource={filteredData}
         rowKey="key"
       />
+
+      {/* Add Member Modal */}
+      <Modal
+        title="Add New Member"
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        onOk={() => form.submit()}
+        okText="Add">
+        <Form layout="vertical" form={form} onFinish={handleAddMember}>
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="email" label="Email" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
+            <Select
+              mode="multiple"
+              options={[
+                { label: "Admin", value: "Admin" },
+                { label: "Group Manager", value: "GM" },
+                { label: "User", value: "Individual" },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Select
+              options={[
+                { value: "Onboarded" },
+                { value: "Pending" },
+                { value: "Deactivated" },
+              ]}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Edit Member Modal */}
+      <Modal
+        title="Edit Member"
+        open={editModalVisible}
+        onCancel={() => setEditModalVisible(false)}
+        onOk={() => editForm.submit()}
+        okText="Save Changes">
+        <Form layout="vertical" form={editForm} onFinish={handleUpdateMember}>
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="email" label="Email" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
+            <Select
+              mode="multiple"
+              options={[
+                { label: "Admin", value: "Admin" },
+                { label: "Group Manager", value: "GM" },
+                { label: "User", value: "Individual" },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Select
+              options={[
+                { value: "Onboarded" },
+                { value: "Pending" },
+                { value: "Deactivated" },
+              ]}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title="Remove Member"
+        open={deleteModalVisible}
+        onCancel={() => setDeleteModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setDeleteModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button key="remove" type="primary" danger onClick={handleDelete}>
+            Remove
+          </Button>,
+        ]}>
+        Are you sure you want to remove <strong>{selectedMember?.name}</strong>?
+      </Modal>
     </>
   );
 };

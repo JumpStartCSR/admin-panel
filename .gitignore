@@ -28,6 +28,8 @@ turbo/
 .env
 .env.*
 !.env.example
+frontend/.env
+frontend/.env.*
 
 # misc
 .DS_Store
