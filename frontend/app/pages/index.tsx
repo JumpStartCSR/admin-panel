@@ -15,6 +15,8 @@ const App: React.FC = () => {
   const { user, isLoggedIn } = useAuth();
   const [selectedKey, setSelectedKey] = React.useState<string>("dashboard");
 
+  console.log(user);
+
   if (!isLoggedIn) return null; // or a loading indicator
 
   return (
@@ -35,7 +37,11 @@ const App: React.FC = () => {
       <Layout className="h-screen">
         <Header />
         <Layout>
-          <Sider selectedkey={selectedKey} onKeyChange={setSelectedKey} />
+          <Sider
+            selectedkey={selectedKey}
+            onKeyChange={setSelectedKey}
+            userId={user?.id}
+          />
           <Layout style={{ padding: "0 24px 24px" }}>
             {/* <Breadcrumb
               items={[{ title: "Home" }, { title: "List" }, { title: "App" }]}

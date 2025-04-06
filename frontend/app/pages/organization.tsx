@@ -1,6 +1,15 @@
 "use client";
-import React, { useState } from "react";
-import { Table, Button, Input, Modal, Form, DatePicker, Space } from "antd";
+import React, { useEffect, useState } from "react";
+import {
+  Table,
+  Button,
+  Input,
+  Modal,
+  Form,
+  DatePicker,
+  Space,
+  message,
+} from "antd";
 import { PlusOutlined, SearchOutlined, CloseOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import dayjs from "dayjs";
@@ -22,32 +31,37 @@ const Organizations: React.FC = () => {
   );
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
+  const [data, setData] = useState<OrganizationDataType[]>([]);
 
-  const [data, setData] = useState<OrganizationDataType[]>([
-    {
-      key: "1",
-      name: "Seattle General Hospital",
-      startDate: "01 Jan, 2024",
-      endDate: "01 Jan, 2025",
-    },
-    {
-      key: "2",
-      name: "Mercy Health Center",
-      startDate: "15 Mar, 2023",
-      endDate: "",
-    },
-  ]);
+  // Fetch organizations
+  const fetchOrganizations = async () => {
+    const res = await fetch("/api/organizations");
+    const orgs = await res.json();
+    setData(orgs);
+  };
 
-  const handleAddOrganization = (values: any) => {
-    const newEntry: OrganizationDataType = {
-      key: String(Date.now()),
-      name: values.name,
-      startDate: values.startDate.format("DD MMM, YYYY"),
-      endDate: values.endDate ? values.endDate.format("DD MMM, YYYY") : "",
-    };
-    setData([...data, newEntry]);
-    setModalVisible(false);
-    form.resetFields();
+  useEffect(() => {
+    fetchOrganizations();
+  }, []);
+
+  const handleAddOrganization = async (values: any) => {
+    const res = await fetch("/api/organizations", {
+      method: "POST",
+      body: JSON.stringify({
+        name: values.name,
+        startDate: values.startDate.format("YYYY-MM-DD"),
+        endDate: values.endDate ? values.endDate.format("YYYY-MM-DD") : null,
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      form.resetFields();
+      setModalVisible(false);
+      fetchOrganizations();
+    } else {
+      message.error("Failed to add organization.");
+    }
   };
 
   const handleEdit = (record: OrganizationDataType) => {
@@ -60,26 +74,40 @@ const Organizations: React.FC = () => {
     setEditModalVisible(true);
   };
 
-  const handleUpdateOrganization = (values: any) => {
-    const updated = data.map((org) =>
-      org.key === selectedOrg?.key
-        ? {
-            ...org,
-            name: values.name,
-            startDate: values.startDate.format("DD MMM, YYYY"),
-            endDate: values.endDate
-              ? values.endDate.format("DD MMM, YYYY")
-              : "",
-          }
-        : org
-    );
-    setData(updated);
-    setEditModalVisible(false);
+  const handleUpdateOrganization = async (values: any) => {
+    if (!selectedOrg) return;
+
+    const res = await fetch(`/api/organizations/${selectedOrg.key}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        name: values.name,
+        startDate: values.startDate.format("YYYY-MM-DD"),
+        endDate: values.endDate ? values.endDate.format("YYYY-MM-DD") : null,
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      setEditModalVisible(false);
+      fetchOrganizations();
+    } else {
+      message.error("Failed to update organization.");
+    }
   };
 
-  const handleDelete = () => {
-    setData(data.filter((org) => org.key !== selectedOrg?.key));
-    setDeleteModalVisible(false);
+  const handleDelete = async () => {
+    if (!selectedOrg) return;
+
+    const res = await fetch(`/api/organizations/${selectedOrg.key}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      setDeleteModalVisible(false);
+      fetchOrganizations();
+    } else {
+      message.error("Failed to delete organization.");
+    }
   };
 
   const filteredData = data.filter((item) =>
@@ -116,11 +144,9 @@ const Organizations: React.FC = () => {
     <>
       <div className="title flex items-center justify-between mb-4">
         <h2>Manage Organizations</h2>
-        <div className="gap-2 flex">
-          <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
-            Add Organization
-          </Button>
-        </div>
+        <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+          Add Organization
+        </Button>
       </div>
 
       <div className="flex items-center mb-4 gap-2">
@@ -200,7 +226,7 @@ const Organizations: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       <Modal
         title="Remove Organization"
         open={deleteModalVisible}
