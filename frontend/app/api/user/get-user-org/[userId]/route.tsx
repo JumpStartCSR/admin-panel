@@ -5,12 +5,12 @@ export async function GET(
   req: Request,
   context: { params: { userId: string } }
 ) {
-  const { userId } = await context.params;
+  const { userId } = context.params;
 
   try {
     const result = await db.query(
       `
-      SELECT o.name
+      SELECT o.organizationid, o.name
       FROM "user" u
       JOIN "organization" o ON u.organizationid = o.organizationid
       WHERE u.pb_user_id = $1
@@ -22,9 +22,12 @@ export async function GET(
       return new NextResponse("Organization not found", { status: 404 });
     }
 
-    return NextResponse.json({ name: result.rows[0].name });
+    return NextResponse.json({
+      id: result.rows[0].organizationid,
+      name: result.rows[0].name,
+    });
   } catch (err) {
-    console.error("Error fetching organization name:", err);
+    console.error("Error fetching organization info:", err);
     return new NextResponse("Internal server error", { status: 500 });
   }
 }

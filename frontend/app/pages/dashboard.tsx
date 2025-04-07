@@ -2,6 +2,7 @@
 import React from "react";
 import { Card, Avatar, Row, Col, Space } from "antd";
 import { UserOutlined, ProductOutlined } from "@ant-design/icons";
+import { useOrganization } from "../context/org-context";
 
 const groupsData = [
   {
@@ -49,7 +50,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
-  const userName = user.roles;
+  const userName = user.username;
 
   return (
     <>

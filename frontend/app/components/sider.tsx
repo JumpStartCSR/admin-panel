@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   AppstoreOutlined,
   CodeSandboxOutlined,
@@ -10,6 +10,7 @@ import {
 import { Layout, Menu } from "antd";
 import type { MenuProps } from "antd";
 import { useAuth } from "../context/auth-context";
+import { useOrganization } from "../context/org-context";
 
 const SiderAnts = Layout.Sider;
 
@@ -18,27 +19,7 @@ const Sider: React.FC<{
   onKeyChange: (key: string) => void;
 }> = ({ selectedkey, onKeyChange }) => {
   const { user } = useAuth();
-  const [organizationName, setOrganizationName] = useState("Loading...");
-
-  useEffect(() => {
-    const fetchOrgName = async () => {
-      try {
-        const res = await fetch(`/api/user/get-user-org/${user?.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setOrganizationName(data.name);
-        } else {
-          setOrganizationName("Unknown Organization");
-        }
-      } catch {
-        setOrganizationName("Error Loading Org");
-      }
-    };
-
-    if (user?.id) {
-      fetchOrgName();
-    }
-  }, [user?.id]);
+  const { organizationName, organizationId } = useOrganization();
 
   const userRoles = user?.roles ?? [];
 
@@ -86,7 +67,7 @@ const Sider: React.FC<{
           gap: "8px",
         }}>
         <BankOutlined />
-        {organizationName}
+        {organizationName}{organizationId}
       </div>
 
       <Menu

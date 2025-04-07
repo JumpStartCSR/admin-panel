@@ -66,7 +66,7 @@ const Members: React.FC = () => {
     });
 
     if (!pbRes.ok) {
-      setUsernameError("User not found in PocketBase.");
+      setUsernameError("User not Found");
       return;
     }
 
@@ -225,7 +225,7 @@ const Members: React.FC = () => {
       <div className="title flex items-center justify-between mb-4">
         <h2>Manage Members</h2>
         <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
-          Add Member
+          Invite Member
         </Button>
       </div>
 
@@ -260,7 +260,7 @@ const Members: React.FC = () => {
 
       {/* Add Member Modal */}
       <Modal
-        title="Add New Member"
+        title="Invite New Member"
         open={modalVisible}
         onCancel={() => {
           setUsernameError(null);
@@ -271,11 +271,11 @@ const Members: React.FC = () => {
         <Form layout="vertical" form={form} onFinish={handleAddMember}>
           <Form.Item
             name="username"
-            label="PocketBase Username"
+            label="Username"
             validateStatus={usernameError ? "error" : ""}
             help={usernameError}
             rules={[{ required: true }]}>
-            <Input placeholder="Enter PocketBase username" />
+            <Input placeholder="Enter Username" />
           </Form.Item>
 
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
