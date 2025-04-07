@@ -32,7 +32,7 @@ const SignIn: React.FC = () => {
         ? `https://holmz-backend.pockethost.io/api/files/users/${user.id}/${user.avatar}`
         : undefined;
 
-      const roleRes = await fetch("/api/get-user-roles", {
+      const roleRes = await fetch("/api/user/get-user-roles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pb_user_id: user.id }),

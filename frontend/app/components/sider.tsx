@@ -9,43 +9,21 @@ import {
 } from "@ant-design/icons";
 import { Layout, Menu } from "antd";
 import type { MenuProps } from "antd";
+import { useAuth } from "../context/auth-context";
 
 const SiderAnts = Layout.Sider;
-
-const items: MenuProps["items"] = [
-  {
-    key: "organizations",
-    label: "Organizations",
-    icon: <CodeSandboxOutlined />,
-  },
-  {
-    key: "dashboard",
-    icon: <AppstoreOutlined />,
-    label: "Dashboard",
-  },
-  {
-    key: "groups",
-    icon: <GroupOutlined />,
-    label: "Groups",
-  },
-  {
-    key: "members",
-    icon: <TeamOutlined />,
-    label: "Members",
-  },
-];
 
 const Sider: React.FC<{
   selectedkey: string;
   onKeyChange: (key: string) => void;
-  userId: string;
-}> = ({ selectedkey, onKeyChange, userId }) => {
+}> = ({ selectedkey, onKeyChange }) => {
+  const { user } = useAuth();
   const [organizationName, setOrganizationName] = useState("Loading...");
 
   useEffect(() => {
     const fetchOrgName = async () => {
       try {
-        const res = await fetch(`/api/organization-name/${userId}`);
+        const res = await fetch(`/api/user/get-user-org/${user?.id}`);
         if (res.ok) {
           const data = await res.json();
           setOrganizationName(data.name);
@@ -57,10 +35,39 @@ const Sider: React.FC<{
       }
     };
 
-    if (userId) {
+    if (user?.id) {
       fetchOrgName();
     }
-  }, [userId]);
+  }, [user?.id]);
+
+  const userRoles = user?.roles ?? [];
+
+  const menuItems: MenuProps["items"] = [
+    ...(userRoles.includes("Super Admin")
+      ? [
+          {
+            key: "organizations",
+            label: "Organizations",
+            icon: <CodeSandboxOutlined />,
+          },
+        ]
+      : []),
+    {
+      key: "dashboard",
+      icon: <AppstoreOutlined />,
+      label: "Dashboard",
+    },
+    {
+      key: "groups",
+      icon: <GroupOutlined />,
+      label: "Groups",
+    },
+    {
+      key: "members",
+      icon: <TeamOutlined />,
+      label: "Members",
+    },
+  ];
 
   return (
     <SiderAnts
@@ -85,7 +92,7 @@ const Sider: React.FC<{
       <Menu
         selectedKeys={[selectedkey]}
         mode="inline"
-        items={items}
+        items={menuItems}
         onClick={(e) => onKeyChange(e.key)}
       />
     </SiderAnts>

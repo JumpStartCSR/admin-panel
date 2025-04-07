@@ -38,7 +38,6 @@ const App: React.FC = () => {
           <Sider
             selectedkey={selectedKey}
             onKeyChange={setSelectedKey}
-            userId={user?.id}
           />
           <Layout style={{ padding: "0 24px 24px" }}>
             {/* <Breadcrumb

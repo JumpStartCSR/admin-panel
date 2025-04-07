@@ -27,7 +27,7 @@ interface DataType {
   roles: string[];
   status: string;
   lastActive: string;
-  dateAdded: string;
+  dateaded: string;
 }
 
 const Members: React.FC = () => {
@@ -197,7 +197,7 @@ const Members: React.FC = () => {
       render: (roles) => roles.join(", "),
     },
     { title: "Status", dataIndex: "status", key: "status" },
-    { title: "Date Added", dataIndex: "dateAdded", key: "dateAdded" },
+    { title: "Date Added", dataIndex: "dateadded", key: "dateadded" },
     {
       title: "Controls",
       key: "controls",
