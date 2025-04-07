@@ -19,7 +19,7 @@ const Sider: React.FC<{
   onKeyChange: (key: string) => void;
 }> = ({ selectedkey, onKeyChange }) => {
   const { user } = useAuth();
-  const { organizationName, organizationId } = useOrganization();
+  const { organizationName } = useOrganization();
 
   const userRoles = user?.roles ?? [];
 
@@ -67,7 +67,7 @@ const Sider: React.FC<{
           gap: "8px",
         }}>
         <BankOutlined />
-        {organizationName}{organizationId}
+        {organizationName}
       </div>
 
       <Menu

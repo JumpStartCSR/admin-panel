@@ -5,7 +5,7 @@ export async function GET(
   req: Request,
   context: { params: { userId: string } }
 ) {
-  const { userId } = context.params;
+  const { userId } = await context.params;
 
   try {
     const result = await db.query(

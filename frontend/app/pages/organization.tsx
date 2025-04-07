@@ -13,6 +13,7 @@ import {
 import { PlusOutlined, SearchOutlined, CloseOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import dayjs from "dayjs";
+import { useOrganization } from "../context/org-context";
 
 interface OrganizationDataType {
   key: string;
@@ -32,8 +33,8 @@ const Organizations: React.FC = () => {
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
   const [data, setData] = useState<OrganizationDataType[]>([]);
+  const { organizationId, setOrganization } = useOrganization();
 
-  // Fetch organizations
   const fetchOrganizations = async () => {
     const res = await fetch("/api/organizations");
     const orgs = await res.json();
@@ -110,6 +111,11 @@ const Organizations: React.FC = () => {
     }
   };
 
+  const handleSelectOrg = (org: OrganizationDataType) => {
+    setOrganization(org.name, org.key);
+    message.success(`Selected ${org.name} as your organization.`);
+  };
+
   const filteredData = data.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -134,6 +140,12 @@ const Organizations: React.FC = () => {
               setDeleteModalVisible(true);
             }}>
             Remove
+          </Button>
+          <Button
+            type="default"
+            disabled={record.key === organizationId}
+            onClick={() => handleSelectOrg(record)}>
+            {record.key === organizationId ? "Selected" : "Select"}
           </Button>
         </Space>
       ),
