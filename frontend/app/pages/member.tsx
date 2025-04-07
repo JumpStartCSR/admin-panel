@@ -20,6 +20,7 @@ import {
   DownOutlined,
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
+import { useOrganization } from "../context/org-context";
 
 interface DataType {
   key: string;
@@ -44,13 +45,14 @@ const Members: React.FC = () => {
 
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
+  const {organizationId} = useOrganization();
 
   useEffect(() => {
     fetchMembers();
-  }, []);
+  }, [organizationId]);
 
   const fetchMembers = async () => {
-    const res = await fetch("/api/members");
+    const res = await fetch(`/api/members?organizationId=${organizationId}`);
     const members = await res.json();
     setData(members);
   };
@@ -74,9 +76,10 @@ const Members: React.FC = () => {
 
     const payload = {
       pbUserID: user.id,
-      name: user.name || user.username,
+      name: user.name,
       roles: values.roles,
       status: values.status,
+      organizationid: organizationId,
     };
 
     const res = await fetch("/api/members", {

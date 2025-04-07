@@ -23,27 +23,47 @@ const SignIn: React.FC = () => {
       const { username, password } = values;
       const pb = new PocketBase("https://holmz-backend.pockethost.io");
 
+      // 1. Authenticate with PocketBase
       const userData = await pb
         .collection("users")
         .authWithPassword(username, password);
       const user = userData.record;
 
-      const avatarUrl = user.avatar
-        ? `https://holmz-backend.pockethost.io/api/files/users/${user.id}/${user.avatar}`
-        : undefined;
+      // 2. Check if this user has been invited to the admin panel (exists in Postgres)
+      const invitedRes = await fetch("/api/user/check-invited", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pb_user_id: user.id }),
+      });
 
+      if (!invitedRes.ok) {
+        throw new Error("Not invited");
+      }
+
+      const invitedData = await invitedRes.json();
+      if (!invitedData.exists) {
+        setErrorMessage(
+          "You are not invited to the admin panel. Please contact your administrator."
+        );
+        return;
+      }
+
+      // 3. Fetch roles from Postgres
       const roleRes = await fetch("/api/user/get-user-roles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pb_user_id: user.id }),
       });
 
+      if (!roleRes.ok) throw new Error("Failed to fetch user roles.");
       const { roles } = await roleRes.json();
 
-      if (!roleRes.ok || !roles) {
-        throw new Error("Failed to fetch user roles.");
-      }
+      // 4. Build avatar URL
+      const avatarUrl = user.avatar
+        ? `https://holmz-backend.pockethost.io/api/files/users/${user.id}/${user.avatar}`
+        : undefined;
 
+      // 5. Login to context
       login({
         id: user.id,
         username: user.username,
@@ -52,11 +72,15 @@ const SignIn: React.FC = () => {
         PCG_status: user.PCG_status,
         avatar: avatarUrl,
         token: pb.authStore.token,
-        roles: roles,
+        roles,
       });
 
       router.push("/");
     } catch (err) {
+      if (err instanceof Error && err.message === "Not invited") {
+        return; 
+      }
+
       console.error("Login error:", err);
       setErrorMessage("Invalid username or password.");
     } finally {
