@@ -3,7 +3,6 @@ import "./globals.css";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { AuthProvider } from "./context/auth-context";
 import { OrganizationProvider } from "./context/org-context";
-import "antd/dist/reset.css";
 
 export const metadata: Metadata = {
   title: "Holmz Admin Panel",

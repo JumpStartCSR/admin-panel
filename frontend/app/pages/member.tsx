@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -21,14 +21,15 @@ import {
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { useOrganization } from "../context/org-context";
+import { useAuth } from "../context/auth-context";
 
 interface DataType {
   key: string;
   name: string;
   roles: string[];
   status: string;
+  dateadded: string;
   lastActive: string;
-  dateaded: string;
 }
 
 const Members: React.FC = () => {
@@ -37,7 +38,6 @@ const Members: React.FC = () => {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [data, setData] = useState<DataType[]>([]);
   const [usernameError, setUsernameError] = useState<string | null>(null);
-
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -45,7 +45,13 @@ const Members: React.FC = () => {
 
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
-  const {organizationId} = useOrganization();
+  const { organizationId } = useOrganization();
+  const { user } = useAuth();
+  const currentUserRoles = user?.roles || [];
+
+  const isSuperAdmin = currentUserRoles.includes("Super Admin");
+  const isAdmin = currentUserRoles.includes("Admin");
+  const isGM = currentUserRoles.includes("GM");
 
   useEffect(() => {
     fetchMembers();
@@ -72,11 +78,11 @@ const Members: React.FC = () => {
       return;
     }
 
-    const { user } = await pbRes.json();
+    const { user: pbUser } = await pbRes.json();
 
     const payload = {
-      pbUserID: user.id,
-      name: user.name,
+      pbUserID: pbUser.id,
+      name: pbUser.name,
       roles: values.roles,
       status: values.status,
       organizationid: organizationId,
@@ -99,12 +105,13 @@ const Members: React.FC = () => {
 
   const handleEdit = (record: DataType) => {
     setSelectedMember(record);
-    setEditModalVisible(true);
     editForm.setFieldsValue(record);
+    setEditModalVisible(true);
   };
 
   const handleUpdateMember = async (values: any) => {
     if (!selectedMember) return;
+
     const res = await fetch(`/api/members/${selectedMember.key}`, {
       method: "PUT",
       body: JSON.stringify(values),
@@ -163,7 +170,7 @@ const Members: React.FC = () => {
 
   const roleMenu = (
     <Menu>
-      {["Admin", "Group Manager", "User"].map((role) => (
+      {["Super Admin", "Admin", "GM", "Individual"].map((role) => (
         <Menu.Item
           key={role}
           onClick={handleMenuClick(setSelectedRoles, selectedRoles)}>
@@ -191,6 +198,24 @@ const Members: React.FC = () => {
     return matchesSearch && matchesStatus && matchesRole;
   });
 
+  const canManageUser = (roles: string[]) => {
+    if (isSuperAdmin) return true;
+    if (isAdmin) return !roles.includes("Super Admin");
+    if (isGM)
+      return (
+        roles.every((r) => r === "Individual") ||
+        user?.id === selectedMember?.key
+      );
+    return false;
+  };
+
+  const roleOptions = [
+    ...(isSuperAdmin ? [{ label: "Super Admin", value: "Super Admin" }] : []),
+    ...(isAdmin || isSuperAdmin ? [{ label: "Admin", value: "Admin" }] : []),
+    { label: "Group Manager", value: "GM" },
+    { label: "Individual User", value: "Individual" },
+  ];
+
   const columns: TableProps<DataType>["columns"] = [
     { title: "Name", dataIndex: "name", key: "name" },
     {
@@ -204,22 +229,31 @@ const Members: React.FC = () => {
     {
       title: "Controls",
       key: "controls",
-      render: (_, record) => (
-        <Space>
-          <Button type="link" onClick={() => handleEdit(record)}>
-            Edit
-          </Button>
-          <Button
-            type="link"
-            danger
-            onClick={() => {
-              setSelectedMember(record);
-              setDeleteModalVisible(true);
-            }}>
-            Remove
-          </Button>
-        </Space>
-      ),
+      render: (_, record) => {
+        const isSelf = user?.id === record.key;
+        const canEdit = canManageUser(record.roles) || isSelf;
+
+        return (
+          <Space>
+            <Button
+              type="link"
+              onClick={() => handleEdit(record)}
+              disabled={!canEdit}>
+              Edit
+            </Button>
+            <Button
+              type="link"
+              danger
+              onClick={() => {
+                setSelectedMember(record);
+                setDeleteModalVisible(true);
+              }}
+              disabled={!canEdit}>
+              Remove
+            </Button>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -283,11 +317,14 @@ const Members: React.FC = () => {
 
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
-              options={[
-                { label: "Admin", value: "Admin" },
-                { label: "Group Manager", value: "GM" },
-                { label: "Individual User", value: "Individual" },
-              ]}
+              mode="multiple"
+              options={roleOptions}
+              disabled={isGM && !isAdmin && !isSuperAdmin}
+              placeholder={
+                isGM && !isAdmin && !isSuperAdmin
+                  ? "Only 'Individual' is allowed"
+                  : ""
+              }
             />
           </Form.Item>
 
@@ -303,7 +340,7 @@ const Members: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Edit Modal */}
+      {/* Edit Member Modal */}
       <Modal
         title="Edit Member"
         open={editModalVisible}
@@ -317,11 +354,13 @@ const Members: React.FC = () => {
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
               mode="multiple"
-              options={[
-                { label: "Admin", value: "Admin" },
-                { label: "Group Manager", value: "GM" },
-                { label: "Individual User", value: "Individual" },
-              ]}
+              options={roleOptions}
+              disabled={isGM && !isAdmin && !isSuperAdmin}
+              placeholder={
+                isGM && !isAdmin && !isSuperAdmin
+                  ? "Only 'Individual' is allowed"
+                  : ""
+              }
             />
           </Form.Item>
           <Form.Item name="status" label="Status" rules={[{ required: true }]}>
