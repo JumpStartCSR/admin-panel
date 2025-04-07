@@ -59,12 +59,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
         <div>
           <div className="flex items-center gap-3">
             <h3>Your Groups</h3>
-            {/* <a
+            <a
               onClick={() => {
                 onKeyChange("groups");
               }}>
               view all
-            </a> */}
+            </a>
           </div>
           <h6>Manage and access your groups here</h6>
         </div>

@@ -1,4 +1,3 @@
-// app/api/members/[id]/route.ts
 import db from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -7,19 +6,22 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const userid = parseInt(params.id);
-  const { name, email, status, roles } = await req.json();
+  const { name, status, roles } = await req.json();
 
+  // Update user data
   await db.query(
     `
     UPDATE "user"
-    SET name = $1, email = $2, status = $3
-    WHERE userid = $4
+    SET name = $1, status = $2
+    WHERE userid = $3
     `,
-    [name, email, status, userid]
+    [name, status, userid]
   );
 
+  // Remove old roles
   await db.query(`DELETE FROM "user_role" WHERE userid = $1`, [userid]);
 
+  // Add updated roles
   for (const role of roles) {
     const roleRes = await db.query(
       `SELECT roleid FROM "role" WHERE title = $1`,
@@ -43,6 +45,7 @@ export async function DELETE(
 ) {
   const userid = parseInt(params.id);
 
+  // Delete user and cascade roles
   await db.query(`DELETE FROM "user" WHERE userid = $1`, [userid]);
 
   return new NextResponse(null, { status: 204 });

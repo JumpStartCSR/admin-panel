@@ -286,7 +286,7 @@ const Members: React.FC = () => {
               options={[
                 { label: "Admin", value: "Admin" },
                 { label: "Group Manager", value: "GM" },
-                { label: "User", value: "Individual" },
+                { label: "Individual User", value: "Individual" },
               ]}
             />
           </Form.Item>
@@ -316,10 +316,11 @@ const Members: React.FC = () => {
           </Form.Item>
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
+              mode="multiple"
               options={[
                 { label: "Admin", value: "Admin" },
                 { label: "Group Manager", value: "GM" },
-                { label: "User", value: "Individual" },
+                { label: "Individual User", value: "Individual" },
               ]}
             />
           </Form.Item>

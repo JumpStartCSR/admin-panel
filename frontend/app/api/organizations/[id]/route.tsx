@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function PUT(req: Request, context: { params: { id: string } }) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const { name, startDate, endDate } = await req.json();
 
     await db.query(
