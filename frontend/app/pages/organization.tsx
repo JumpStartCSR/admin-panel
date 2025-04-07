@@ -35,6 +35,8 @@ const Organizations: React.FC = () => {
   const [data, setData] = useState<OrganizationDataType[]>([]);
   const { organizationId, setOrganization } = useOrganization();
 
+  const [messageApi, contextHolder] = message.useMessage();
+
   const fetchOrganizations = async () => {
     const res = await fetch("/api/organizations");
     const orgs = await res.json();
@@ -60,8 +62,9 @@ const Organizations: React.FC = () => {
       form.resetFields();
       setModalVisible(false);
       fetchOrganizations();
+      messageApi.success("Organization added successfully.");
     } else {
-      message.error("Failed to add organization.");
+      messageApi.error("Failed to add organization.");
     }
   };
 
@@ -91,29 +94,45 @@ const Organizations: React.FC = () => {
     if (res.ok) {
       setEditModalVisible(false);
       fetchOrganizations();
+      messageApi.success("Organization updated successfully.");
     } else {
-      message.error("Failed to update organization.");
+      messageApi.error("Failed to update organization.");
     }
   };
 
   const handleDelete = async () => {
     if (!selectedOrg) return;
 
-    const res = await fetch(`/api/organizations/${selectedOrg.key}`, {
-      method: "DELETE",
-    });
+    try {
+      const res = await fetch(`/api/organizations/${selectedOrg.key}`, {
+        method: "DELETE",
+      });
 
-    if (res.ok) {
-      setDeleteModalVisible(false);
-      fetchOrganizations();
-    } else {
-      message.error("Failed to delete organization.");
+      if (res.ok) {
+        setDeleteModalVisible(false);
+        fetchOrganizations();
+        messageApi.success("Organization deleted successfully.");
+      } else {
+        const errorText = await res.text();
+        if (errorText.includes("violates foreign key constraint")) {
+          messageApi.error(
+            "This organization still has users and cannot be deleted."
+          );
+        } else {
+          messageApi.error(
+            "Failed to delete organization. Organization which still has users cannot be deleted."
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Deletion error:", err);
+      messageApi.error("An unexpected error occurred.");
     }
   };
 
   const handleSelectOrg = (org: OrganizationDataType) => {
     setOrganization(org.name, org.key);
-    message.success(`Selected ${org.name} as your organization.`);
+    messageApi.success(`Selected ${org.name} as your organization.`);
   };
 
   const filteredData = data.filter((item) =>
@@ -154,6 +173,8 @@ const Organizations: React.FC = () => {
 
   return (
     <>
+      {contextHolder}
+
       <div className="title flex items-center justify-between mb-4">
         <h2>Manage Organizations</h2>
         <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>

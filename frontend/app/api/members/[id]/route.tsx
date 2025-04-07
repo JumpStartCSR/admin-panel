@@ -5,7 +5,7 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const userid = parseInt(params.id);
+  const userid = await parseInt(params.id);
   const { name, status, roles } = await req.json();
 
   // Update user data
@@ -43,7 +43,7 @@ export async function DELETE(
   _: Request,
   { params }: { params: { id: string } }
 ) {
-  const userid = parseInt(params.id);
+  const userid = await parseInt(params.id);
 
   // Delete user and cascade roles
   await db.query(`DELETE FROM "user" WHERE userid = $1`, [userid]);
