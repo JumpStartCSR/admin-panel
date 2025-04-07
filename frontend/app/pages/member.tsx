@@ -36,6 +36,7 @@ const Members: React.FC = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [data, setData] = useState<DataType[]>([]);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -45,20 +46,44 @@ const Members: React.FC = () => {
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
 
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
   const fetchMembers = async () => {
     const res = await fetch("/api/members");
     const members = await res.json();
     setData(members);
   };
 
-  useEffect(() => {
-    fetchMembers();
-  }, []);
-
   const handleAddMember = async (values: any) => {
+    setUsernameError(null);
+    const username = values.username;
+
+    const pbRes = await fetch("/api/pb-user-lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
+
+    if (!pbRes.ok) {
+      setUsernameError("User not found in PocketBase.");
+      return;
+    }
+
+    const { user } = await pbRes.json();
+
+    const payload = {
+      pbUserID: user.id,
+      name: user.name || user.username,
+      email: user.email,
+      roles: values.roles,
+      status: values.status,
+    };
+
     const res = await fetch("/api/members", {
       method: "POST",
-      body: JSON.stringify(values),
+      body: JSON.stringify(payload),
       headers: { "Content-Type": "application/json" },
     });
 
@@ -175,7 +200,7 @@ const Members: React.FC = () => {
       render: (roles) => roles.join(", "),
     },
     { title: "Status", dataIndex: "status", key: "status" },
-    { title: "Date Added", dataIndex: "dateadded", key: "dateAdded" },
+    { title: "Date Added", dataIndex: "dateAdded", key: "dateAdded" },
     {
       title: "Controls",
       key: "controls",
@@ -240,16 +265,22 @@ const Members: React.FC = () => {
       <Modal
         title="Add New Member"
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setUsernameError(null);
+          setModalVisible(false);
+        }}
         onOk={() => form.submit()}
         okText="Add">
         <Form layout="vertical" form={form} onFinish={handleAddMember}>
-          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-            <Input />
+          <Form.Item
+            name="username"
+            label="PocketBase Username"
+            validateStatus={usernameError ? "error" : ""}
+            help={usernameError}
+            rules={[{ required: true }]}>
+            <Input placeholder="Enter PocketBase username" />
           </Form.Item>
-          <Form.Item name="email" label="Email" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
+
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
               mode="multiple"
@@ -260,6 +291,7 @@ const Members: React.FC = () => {
               ]}
             />
           </Form.Item>
+
           <Form.Item name="status" label="Status" rules={[{ required: true }]}>
             <Select
               options={[
@@ -272,7 +304,7 @@ const Members: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Edit Member Modal */}
+      {/* Edit Modal */}
       <Modal
         title="Edit Member"
         open={editModalVisible}
