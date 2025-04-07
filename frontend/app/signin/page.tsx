@@ -21,22 +21,29 @@ const SignIn: React.FC = () => {
 
     try {
       const { username, password } = values;
-
       const pb = new PocketBase("https://holmz-backend.pockethost.io");
 
-      //  Authenticate against PocketBase
       const userData = await pb
         .collection("users")
         .authWithPassword(username, password);
-
       const user = userData.record;
 
-      //  Build full avatar URL (optional)
       const avatarUrl = user.avatar
         ? `https://holmz-backend.pockethost.io/api/files/users/${user.id}/${user.avatar}`
         : undefined;
 
-      //  Store user data in your auth context
+      const roleRes = await fetch("/api/get-user-roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pb_user_id: user.id }),
+      });
+
+      const { roles } = await roleRes.json();
+
+      if (!roleRes.ok || !roles) {
+        throw new Error("Failed to fetch user roles.");
+      }
+
       login({
         id: user.id,
         username: user.username,
@@ -45,6 +52,7 @@ const SignIn: React.FC = () => {
         PCG_status: user.PCG_status,
         avatar: avatarUrl,
         token: pb.authStore.token,
+        roles: roles,
       });
 
       router.push("/");

@@ -10,6 +10,7 @@ interface User {
   avatar?: string;
   PCG_status?: string;
   token: string;
+  roles: string[];
 }
 
 interface AuthContextType {
@@ -26,9 +27,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+  const login = async (userData: User) => {
+    try {
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+    } catch (err) {
+      console.error("Failed to fetch roles", err);
+    }
   };
 
   const logout = () => {
@@ -39,21 +44,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
+    const isPublicRoute = pathname === "/signin";
+
     if (stored) {
       try {
         const parsed: User = JSON.parse(stored);
         setUser(parsed);
+
+        if (isPublicRoute) {
+          router.push("/");
+        }
       } catch {
         localStorage.removeItem("user");
       }
-    }
-
-    const isPublicRoute = pathname === "/signin";
-
-    if (!stored && !isPublicRoute) {
+    } else if (!isPublicRoute) {
       router.push("/signin");
-    } else if (stored && isPublicRoute) {
-      router.push("/");
     }
   }, [pathname, router]);
 

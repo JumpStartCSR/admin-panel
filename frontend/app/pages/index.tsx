@@ -15,8 +15,6 @@ const App: React.FC = () => {
   const { user, isLoggedIn } = useAuth();
   const [selectedKey, setSelectedKey] = React.useState<string>("dashboard");
 
-  console.log(user);
-
   if (!isLoggedIn) return null; // or a loading indicator
 
   return (

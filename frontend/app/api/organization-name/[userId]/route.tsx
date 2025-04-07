@@ -5,7 +5,7 @@ export async function GET(
   req: Request,
   context: { params: { userId: string } }
 ) {
-  const { userId } = context.params;
+  const { userId } = await context.params;
 
   try {
     const result = await db.query(
@@ -13,7 +13,7 @@ export async function GET(
       SELECT o.name
       FROM "user" u
       JOIN "organization" o ON u.organizationid = o.organizationid
-      WHERE u.userid = $1
+      WHERE u.pb_user_id = $1
       `,
       [userId]
     );

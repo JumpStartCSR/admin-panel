@@ -24,7 +24,6 @@ import type { TableProps } from "antd";
 interface DataType {
   key: string;
   name: string;
-  email: string;
   roles: string[];
   status: string;
   lastActive: string;
@@ -76,7 +75,6 @@ const Members: React.FC = () => {
     const payload = {
       pbUserID: user.id,
       name: user.name || user.username,
-      email: user.email,
       roles: values.roles,
       status: values.status,
     };
@@ -192,7 +190,6 @@ const Members: React.FC = () => {
 
   const columns: TableProps<DataType>["columns"] = [
     { title: "Name", dataIndex: "name", key: "name" },
-    { title: "Email", dataIndex: "email", key: "email" },
     {
       title: "Role",
       dataIndex: "roles",
@@ -283,7 +280,6 @@ const Members: React.FC = () => {
 
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
-              mode="multiple"
               options={[
                 { label: "Admin", value: "Admin" },
                 { label: "Group Manager", value: "GM" },
@@ -315,12 +311,8 @@ const Members: React.FC = () => {
           <Form.Item name="name" label="Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="email" label="Email" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
-              mode="multiple"
               options={[
                 { label: "Admin", value: "Admin" },
                 { label: "Group Manager", value: "GM" },

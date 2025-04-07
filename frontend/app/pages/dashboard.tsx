@@ -44,11 +44,12 @@ interface DashboardProps {
     avatar?: string;
     PCG_status?: string;
     token: string;
+    roles: string[];
   };
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
-  const userName = user.username;
+  const userName = user.roles;
 
   return (
     <>
