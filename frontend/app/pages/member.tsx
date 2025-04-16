@@ -222,7 +222,7 @@ const Members: React.FC = () => {
   const roleOptions = [
     ...(isSuperAdmin ? [{ label: "Super Admin", value: "Super Admin" }] : []),
     ...(isAdmin || isSuperAdmin ? [{ label: "Admin", value: "Admin" }] : []),
-    { label: "Group Manager", value: "GM" },
+    // { label: "Group Manager", value: "GM" },
     { label: "Individual User", value: "Individual" },
   ];
 

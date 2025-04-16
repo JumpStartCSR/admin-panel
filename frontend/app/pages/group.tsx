@@ -332,7 +332,10 @@ const Groups: React.FC = () => {
               ]}
             />
           </Form.Item>
-          <Form.Item label="Managers" name="manager_ids">
+          <Form.Item
+            label="Managers"
+            name="manager_ids"
+            rules={[{ required: true }]}>
             <Select
               mode="multiple"
               showSearch
@@ -380,7 +383,10 @@ const Groups: React.FC = () => {
               ]}
             />
           </Form.Item>
-          <Form.Item label="Managers" name="manager_ids">
+          <Form.Item
+            label="Managers"
+            name="manager_ids"
+            rules={[{ required: true }]}>
             <Select
               mode="multiple"
               showSearch
