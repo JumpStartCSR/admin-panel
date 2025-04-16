@@ -133,3 +133,34 @@ export async function DELETE(
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function GET(_: Request, { params }: { params: { id: string } }) {
+  const groupid = parseInt(params.id);
+
+  const groupRes = await db.query(
+    `SELECT name, description, priority, status, TO_CHAR(created_date, 'DD Mon, YYYY') AS created_date
+     FROM holmz_schema."group"
+     WHERE groupid = $1`,
+    [groupid]
+  );
+
+  const group = groupRes.rows[0];
+  if (!group) {
+    return NextResponse.json({ error: "Group not found" }, { status: 404 });
+  }
+
+  const managerRes = await db.query(
+    `SELECT u.name
+     FROM holmz_schema.user_group ug
+     JOIN holmz_schema."user" u ON ug.userid = u.userid
+     WHERE ug.groupid = $1 AND ug.group_role = 'GM'`,
+    [groupid]
+  );
+
+  const managers = managerRes.rows.map((row) => row.name);
+
+  return NextResponse.json({
+    ...group,
+    managers,
+  });
+}

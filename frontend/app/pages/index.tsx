@@ -1,10 +1,11 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Breadcrumb, Layout, ConfigProvider, theme } from "antd";
 import Header from "../components/header";
 import Sider from "../components/sider";
 import Members from "./member";
 import Groups from "./group";
+import GroupDetail from "../group/detail/[id]/page";
 import Dashboard from "./dashboard";
 import Organizations from "./organization";
 import { useAuth } from "../context/auth-context";
@@ -13,9 +14,10 @@ const { Content } = Layout;
 
 const App: React.FC = () => {
   const { user, isLoggedIn } = useAuth();
-  const [selectedKey, setSelectedKey] = React.useState<string>("dashboard");
+  const [selectedKey, setSelectedKey] = useState<string>("dashboard");
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
 
-  if (!isLoggedIn) return null; // or a loading indicator
+  if (!isLoggedIn) return null;
 
   return (
     <ConfigProvider
@@ -35,20 +37,22 @@ const App: React.FC = () => {
       <Layout className="h-screen">
         <Header />
         <Layout>
-          <Sider
-            selectedkey={selectedKey}
-            onKeyChange={setSelectedKey}
-          />
+          <Sider selectedkey={selectedKey} onKeyChange={setSelectedKey} />
           <Layout style={{ padding: "0 24px 24px" }}>
-            {/* <Breadcrumb
-              items={[{ title: "Home" }, { title: "List" }, { title: "App" }]}
-              style={{ margin: "16px 0" }}
-            /> */}
             <Content style={{ padding: 24, margin: 0, minHeight: 280 }}>
               {selectedKey === "members" ? (
                 <Members />
               ) : selectedKey === "groups" ? (
-                <Groups />
+                selectedGroupId ? (
+                  <GroupDetail
+                    groupId={selectedGroupId}
+                    onBack={() => setSelectedGroupId(null)}
+                  />
+                ) : (
+                  <Groups
+                    onViewDetail={(id: number) => setSelectedGroupId(id)}
+                  />
+                )
               ) : selectedKey === "organizations" ? (
                 <Organizations user={user!} />
               ) : (

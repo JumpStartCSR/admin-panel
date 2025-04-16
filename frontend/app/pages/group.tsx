@@ -30,8 +30,11 @@ interface DataType {
   created_date: string;
   managers: string[];
 }
+interface GroupsProps {
+  onViewDetail?: (id: number) => void;
+}
 
-const Groups: React.FC = () => {
+const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
@@ -110,7 +113,6 @@ const Groups: React.FC = () => {
       setEditModalVisible(true);
     }
   };
-
 
   const handleUpdateGroup = async (values: any) => {
     if (!selectedGroup) return;
@@ -217,7 +219,18 @@ const Groups: React.FC = () => {
   });
 
   const columns: TableProps<DataType>["columns"] = [
-    { title: "Name", dataIndex: "name", key: "name" },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={() => onViewDetail?.(parseInt(record.key))}>
+          {record.name}
+        </Button>
+      ),
+    },
     {
       title: "Managers",
       dataIndex: "managers",
@@ -252,6 +265,7 @@ const Groups: React.FC = () => {
       ),
     },
   ];
+
 
   const managerOptions = members.map((member) => ({
     label: member.name,
