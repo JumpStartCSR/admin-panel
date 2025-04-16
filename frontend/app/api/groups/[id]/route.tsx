@@ -1,32 +1,38 @@
-// app/api/groups/[id]/route.ts
 import { NextResponse } from "next/server";
-
-let mockGroups = globalThis.mockGroups ?? [];
-
-globalThis.mockGroups = mockGroups;
+import db from "@/lib/db";
 
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const updated = await req.json();
-  const groupID = Number(params.id);
-  const index = mockGroups.findIndex((g) => g.groupID === groupID);
+  const groupid = parseInt(params.id);
+  const { name, description, priority, status } = await req.json();
 
-  if (index === -1) {
-    return NextResponse.json({ message: "Group not found" }, { status: 404 });
-  }
+  await db.query(
+    `
+    UPDATE holmz_schema."group"
+    SET name = $1, description = $2, priority = $3, status = $4
+    WHERE groupid = $5
+    `,
+    [name, description, priority, status, groupid]
+  );
 
-  mockGroups[index] = { ...mockGroups[index], ...updated };
-  return NextResponse.json(mockGroups[index]);
+  return NextResponse.json({ updated: true });
 }
 
 export async function DELETE(
   _: Request,
   { params }: { params: { id: string } }
 ) {
-  const groupID = Number(params.id);
-  mockGroups = mockGroups.filter((g) => g.groupID !== groupID);
-  globalThis.mockGroups = mockGroups;
-  return new NextResponse(null, { status: 204 });
+  const groupid = parseInt(params.id);
+
+  try {
+    await db.query(`DELETE FROM holmz_schema."group" WHERE groupid = $1`, [
+      groupid,
+    ]);
+    return new NextResponse(null, { status: 204 });
+  } catch (err: any) {
+    console.error("Delete error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }

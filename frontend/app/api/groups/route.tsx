@@ -1,50 +1,68 @@
-// app/api/groups/route.ts
 import { NextResponse } from "next/server";
+import db from "@/lib/db";
 
-let mockGroups = [
-  {
-    groupID: 1,
-    name: "VA Pilot Group",
-    managers: [1],
-    department: "VA - General",
-    members: 45,
-    priority: "High",
-    status: "Active",
-    createdDate: "11 Nov, 2024",
-    lastActive: "11 minutes ago",
-  },
-  {
-    groupID: 2,
-    name: "Physical Therapy A",
-    managers: [2],
-    department: "VA - Health Dept",
-    members: 12,
-    priority: "High",
-    status: "Active",
-    createdDate: "15 Nov, 2024",
-    lastActive: "2 hours ago",
-  },
-];
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const organizationId = searchParams.get("organizationId");
 
-let currentID = 3;
+  if (typeof organizationId === "undefined") {
+    return NextResponse.json(
+      { error: "organizationId is required" },
+      { status: 400 }
+    );
+  }
 
-export async function GET() {
-  return NextResponse.json(mockGroups);
+  const result = await db.query(
+    `
+    SELECT
+      g.groupid AS key,
+      g.name,
+      g.description,
+      g.priority,
+      g.status,
+      TO_CHAR(g.created_date, 'DD Mon, YYYY') AS created_date
+    FROM holmz_schema."group" g
+    WHERE g.organizationid = $1
+    ORDER BY g.created_date DESC
+    `,
+    [organizationId]
+  );
+
+  return NextResponse.json(result.rows);
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const newGroup = {
-    ...body,
-    groupID: currentID++,
-    createdDate: new Date().toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }),
-    lastActive: "Just now",
-    members: 0,
-  };
-  mockGroups.push(newGroup);
-  return NextResponse.json(newGroup, { status: 201 });
+  const { name, description, priority, status, created_date, organizationid } =
+    await req.json();
+
+  if (
+    typeof organizationid === "undefined" ||
+    typeof name === "undefined"
+  ) {
+    return NextResponse.json(
+      { error: "Missing required fields: name, organizationid" },
+      { status: 400 }
+    );
+  }
+
+  const result = await db.query(
+    `
+    INSERT INTO holmz_schema."group" (name, description, priority, status, created_date, organizationid)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING groupid
+    `,
+    [
+      name,
+      description || "",
+      priority || "Medium",
+      status || "Active",
+      created_date || new Date(),
+      organizationid,
+    ]
+  );
+
+  return NextResponse.json(
+    { groupid: result.rows[0].groupid },
+    { status: 201 }
+  );
 }

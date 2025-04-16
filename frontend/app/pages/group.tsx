@@ -11,6 +11,7 @@ import {
   Modal,
   Form,
   Select,
+  message,
 } from "antd";
 import {
   PlusOutlined,
@@ -19,113 +20,102 @@ import {
   DownOutlined,
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
+import { useOrganization } from "../context/org-context";
 import dayjs from "dayjs";
 
 interface DataType {
   key: string;
   name: string;
-  managers: string;
-  department: string;
-  members: number;
   priority: string;
   status: string;
-  createdDate: string;
-  lastActive: string;
+  created_date: string;
 }
 
 const Groups: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [data, setData] = useState<DataType[]>([
-    {
-      key: "1",
-      name: "VA Pilot Group",
-      managers: "AS",
-      department: "VA - General",
-      members: 45,
-      priority: "High",
-      status: "Active",
-      createdDate: "11 Nov, 2024",
-      lastActive: "11 minutes ago",
-    },
-    {
-      key: "2",
-      name: "Physical Therapy Group A",
-      managers: "AS",
-      department: "VA - Health Dept",
-      members: 12,
-      priority: "High",
-      status: "Active",
-      createdDate: "15 Nov, 2024",
-      lastActive: "2 hours ago",
-    },
-    {
-      key: "3",
-      name: "Physical Therapy Group B",
-      managers: "AS",
-      department: "VA - Health Dept",
-      members: 18,
-      priority: "Medium",
-      status: "Active",
-      createdDate: "14 Nov, 2024",
-      lastActive: "15 Nov, 2024",
-    },
-  ]);
-
+  const [data, setData] = useState<DataType[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<DataType | null>(null);
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
+  const { organizationId } = useOrganization();
 
-  const handleAddGroup = (values: any) => {
-    const newGroup: DataType = {
-      key: String(Date.now()),
-      name: values.name,
-      managers: values.managers,
-      department: values.department,
-      members: 0,
-      priority: values.priority,
-      status: values.status,
-      createdDate: dayjs().format("DD MMM, YYYY"),
-      lastActive: "Just now",
+  const fetchGroups = async () => {
+    if (typeof organizationId === 'undefined') return;
+    try {
+      const res = await fetch(`/api/groups?organizationId=${organizationId}`);
+      const result = await res.json();
+      setData(result);
+    } catch {
+      message.error("Failed to load groups.");
+    }
+  };
+
+  useEffect(() => {
+    fetchGroups();
+  }, [organizationId]);
+
+  const handleAddGroup = async (values: any) => {
+    const payload = {
+      ...values,
+      organizationid: organizationId,
     };
-    setData([...data, newGroup]);
-    setModalVisible(false);
-    form.resetFields();
+
+    const res = await fetch("/api/groups", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      form.resetFields();
+      setModalVisible(false);
+      fetchGroups();
+    } else {
+      message.error("Failed to add group.");
+    }
   };
 
   const handleEdit = (record: DataType) => {
     setSelectedGroup(record);
+    editForm.setFieldsValue(record);
     setEditModalVisible(true);
   };
 
-  // ✅ Sync form values when modal is mounted
-  useEffect(() => {
-    if (editModalVisible && selectedGroup) {
-      editForm.setFieldsValue({
-        name: selectedGroup.name,
-        managers: selectedGroup.managers,
-        department: selectedGroup.department,
-        priority: selectedGroup.priority,
-        status: selectedGroup.status,
-      });
-    }
-  }, [editModalVisible, selectedGroup, editForm]);
+  const handleUpdateGroup = async (values: any) => {
+    if (!selectedGroup) return;
 
-  const handleUpdateGroup = (values: any) => {
-    const updated = data.map((g) =>
-      g.key === selectedGroup?.key ? { ...g, ...values } : g
-    );
-    setData(updated);
-    setEditModalVisible(false);
+    const res = await fetch(`/api/groups/${selectedGroup.key}`, {
+      method: "PUT",
+      body: JSON.stringify(values),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      setEditModalVisible(false);
+      fetchGroups();
+    } else {
+      message.error("Failed to update group.");
+    }
   };
 
-  const handleDelete = () => {
-    setData(data.filter((g) => g.key !== selectedGroup?.key));
-    setDeleteModalVisible(false);
+  const handleDelete = async () => {
+    if (!selectedGroup) return;
+
+    const res = await fetch(`/api/groups/${selectedGroup.key}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      setDeleteModalVisible(false);
+      fetchGroups();
+    } else {
+      message.error("Failed to delete group.");
+    }
   };
 
   const priorityMenu = (
@@ -133,13 +123,13 @@ const Groups: React.FC = () => {
       {["High", "Medium", "Low"].map((priority) => (
         <Menu.Item
           key={priority}
-          onClick={() => {
+          onClick={() =>
             setSelectedPriorities((prev) =>
               prev.includes(priority)
                 ? prev.filter((p) => p !== priority)
                 : [...prev, priority]
-            );
-          }}>
+            )
+          }>
           <Checkbox checked={selectedPriorities.includes(priority)}>
             {priority}
           </Checkbox>
@@ -153,13 +143,13 @@ const Groups: React.FC = () => {
       {["Active", "Inactive", "Archived"].map((status) => (
         <Menu.Item
           key={status}
-          onClick={() => {
+          onClick={() =>
             setSelectedStatuses((prev) =>
               prev.includes(status)
                 ? prev.filter((s) => s !== status)
                 : [...prev, status]
-            );
-          }}>
+            )
+          }>
           <Checkbox checked={selectedStatuses.includes(status)}>
             {status}
           </Checkbox>
@@ -188,13 +178,13 @@ const Groups: React.FC = () => {
 
   const columns: TableProps<DataType>["columns"] = [
     { title: "Name", dataIndex: "name", key: "name" },
-    { title: "Managers", dataIndex: "managers", key: "managers" },
-    { title: "Department", dataIndex: "department", key: "department" },
-    { title: "Members", dataIndex: "members", key: "members" },
     { title: "Priority", dataIndex: "priority", key: "priority" },
     { title: "Status", dataIndex: "status", key: "status" },
-    { title: "Created Date", dataIndex: "createdDate", key: "createdDate" },
-    { title: "Last Active", dataIndex: "lastActive", key: "lastActive" },
+    {
+      title: "Created Date",
+      dataIndex: "created_date",
+      key: "created_date",
+    },
     {
       title: "Controls",
       key: "controls",
@@ -228,9 +218,8 @@ const Groups: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center mb-4">
+      <div className="flex items-center mb-4 gap-2">
         <Input
-          className="mr-1"
           placeholder="Search Groups"
           prefix={<SearchOutlined />}
           value={searchQuery}
@@ -273,18 +262,6 @@ const Groups: React.FC = () => {
             <Input />
           </Form.Item>
           <Form.Item
-            label="Managers"
-            name="managers"
-            rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Department"
-            name="department"
-            rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item
             label="Priority"
             name="priority"
             rules={[{ required: true }]}>
@@ -323,18 +300,6 @@ const Groups: React.FC = () => {
             <Input />
           </Form.Item>
           <Form.Item
-            label="Managers"
-            name="managers"
-            rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Department"
-            name="department"
-            rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item
             label="Priority"
             name="priority"
             rules={[{ required: true }]}>
@@ -358,7 +323,7 @@ const Groups: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       <Modal
         title="Remove Group"
         open={deleteModalVisible}
