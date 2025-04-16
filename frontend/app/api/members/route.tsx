@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       [role]
     );
     const roleid = roleRes.rows[0]?.roleid;
-    if (roleid) {
+    if (roleid == 0 || roleid == 1 || roleid == 2 || roleid == 3) {
       await db.query(
         `INSERT INTO "user_role" (userid, roleid) VALUES ($1, $2)`,
         [userid, roleid]

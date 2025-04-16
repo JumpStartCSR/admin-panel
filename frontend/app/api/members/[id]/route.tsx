@@ -8,7 +8,6 @@ export async function PUT(
   const userid = parseInt(params.id);
   const { name, status, roles } = await req.json();
 
-  // 🔍 Check if GM role is being removed
   const gmRoleRes = await db.query(
     `SELECT roleid FROM "role" WHERE title = 'GM'`
   );
@@ -33,7 +32,6 @@ export async function PUT(
     }
   }
 
-  // ✅ Update user data
   await db.query(
     `
     UPDATE "user"
@@ -43,17 +41,15 @@ export async function PUT(
     [name, status, userid]
   );
 
-  // 🔄 Remove all old roles
   await db.query(`DELETE FROM "user_role" WHERE userid = $1`, [userid]);
 
-  // ➕ Reassign new roles
   for (const role of roles) {
     const roleRes = await db.query(
       `SELECT roleid FROM "role" WHERE title = $1`,
       [role]
     );
     const roleid = roleRes.rows[0]?.roleid;
-    if (roleid) {
+    if (roleid == 0 || roleid == 1 || roleid == 2 || roleid == 3) {
       await db.query(
         `INSERT INTO "user_role" (userid, roleid) VALUES ($1, $2)`,
         [userid, roleid]

@@ -47,8 +47,9 @@ const Members: React.FC = () => {
   const [editForm] = Form.useForm();
   const { organizationId } = useOrganization();
   const { user } = useAuth();
-  const currentUserRoles = user?.roles || [];
+  const [messageApi, contextHolder] = message.useMessage();
 
+  const currentUserRoles = user?.roles || [];
   const isSuperAdmin = currentUserRoles.includes("Super Admin");
   const isAdmin = currentUserRoles.includes("Admin");
   const isGM = currentUserRoles.includes("GM");
@@ -98,8 +99,9 @@ const Members: React.FC = () => {
       form.resetFields();
       setModalVisible(false);
       fetchMembers();
+      messageApi.success("Member added successfully.");
     } else {
-      message.error("Failed to add member.");
+      messageApi.error("Failed to add member.");
     }
   };
 
@@ -121,8 +123,15 @@ const Members: React.FC = () => {
     if (res.ok) {
       setEditModalVisible(false);
       fetchMembers();
+      messageApi.success("Member updated successfully.");
+    } else if (res.status === 400) {
+      const error = await res.json();
+      messageApi.error(
+        error.message ||
+          "Cannot remove GM role while user is still managing a group."
+      );
     } else {
-      message.error("Failed to update member.");
+      messageApi.error("Failed to update member.");
     }
   };
 
@@ -136,8 +145,9 @@ const Members: React.FC = () => {
     if (res.ok) {
       setDeleteModalVisible(false);
       fetchMembers();
+      messageApi.success("Member deleted successfully.");
     } else {
-      message.error("Failed to delete member.");
+      messageApi.error("Failed to delete member.");
     }
   };
 
@@ -259,6 +269,7 @@ const Members: React.FC = () => {
 
   return (
     <>
+      {contextHolder}
       <div className="title flex items-center justify-between mb-4">
         <h2>Manage Members</h2>
         <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
@@ -314,7 +325,6 @@ const Members: React.FC = () => {
             rules={[{ required: true }]}>
             <Input placeholder="Enter Username" />
           </Form.Item>
-
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
               mode="multiple"
@@ -327,7 +337,6 @@ const Members: React.FC = () => {
               }
             />
           </Form.Item>
-
           <Form.Item name="status" label="Status" rules={[{ required: true }]}>
             <Select
               options={[
@@ -375,7 +384,7 @@ const Members: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Member Modal */}
       <Modal
         title="Remove Member"
         open={deleteModalVisible}
