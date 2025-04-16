@@ -20,9 +20,13 @@ export async function GET(req: Request) {
       g.description,
       g.priority,
       g.status,
-      TO_CHAR(g.created_date, 'DD Mon, YYYY') AS created_date
+      TO_CHAR(g.created_date, 'DD Mon, YYYY') AS created_date,
+      ARRAY_AGG(u.name) FILTER (WHERE ug.group_role = 'GM') AS managers
     FROM holmz_schema."group" g
+    LEFT JOIN holmz_schema.user_group ug ON g.groupid = ug.groupid
+    LEFT JOIN holmz_schema."user" u ON ug.userid = u.userid
     WHERE g.organizationid = $1
+    GROUP BY g.groupid
     ORDER BY g.created_date DESC
     `,
     [organizationId]
@@ -32,23 +36,20 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { name, description, priority, status, created_date, organizationid } =
+  const { name, description, priority, status, organizationid, managers } =
     await req.json();
 
-  if (
-    typeof organizationid === "undefined" ||
-    typeof name === "undefined"
-  ) {
+  if (typeof name === "undefined" || typeof organizationid === "undefined") {
     return NextResponse.json(
-      { error: "Missing required fields: name, organizationid" },
+      { error: "Missing required fields." },
       { status: 400 }
     );
   }
 
-  const result = await db.query(
+  const insertGroup = await db.query(
     `
-    INSERT INTO holmz_schema."group" (name, description, priority, status, created_date, organizationid)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO holmz_schema."group" (name, description, priority, status, organizationid, created_date)
+    VALUES ($1, $2, $3, $4, $5, NOW())
     RETURNING groupid
     `,
     [
@@ -56,13 +57,48 @@ export async function POST(req: Request) {
       description || "",
       priority || "Medium",
       status || "Active",
-      created_date || new Date(),
       organizationid,
     ]
   );
 
-  return NextResponse.json(
-    { groupid: result.rows[0].groupid },
-    { status: 201 }
+  const groupid = insertGroup.rows[0]?.groupid;
+  if (!groupid)
+    return NextResponse.json(
+      { error: "Failed to create group." },
+      { status: 500 }
+    );
+
+  const gmRoleRes = await db.query(
+    `SELECT roleid FROM holmz_schema.role WHERE title = 'GM'`
   );
+  const gmRoleId = gmRoleRes.rows[0]?.roleid;
+
+  const validUsers = await db.query(
+    `SELECT userid FROM holmz_schema."user" WHERE organizationid = $1`,
+    [organizationid]
+  );
+  const validUserIds = validUsers.rows.map((u) => u.userid);
+
+  for (const userid of managers || []) {
+    if (!validUserIds.includes(userid)) continue;
+
+    await db.query(
+      `INSERT INTO holmz_schema.user_group (userid, groupid, group_role) VALUES ($1, $2, 'GM')`,
+      [userid, groupid]
+    );
+
+    const hasGMRole = await db.query(
+      `SELECT 1 FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
+      [userid, gmRoleId]
+    );
+
+    if (hasGMRole.rowCount === 0) {
+      await db.query(
+        `INSERT INTO holmz_schema.user_role (userid, roleid) VALUES ($1, $2)`,
+        [userid, gmRoleId]
+      );
+    }
+  }
+
+  return NextResponse.json({ groupid }, { status: 201 });
 }

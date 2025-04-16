@@ -21,7 +21,6 @@ import {
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { useOrganization } from "../context/org-context";
-import dayjs from "dayjs";
 
 interface DataType {
   key: string;
@@ -29,6 +28,7 @@ interface DataType {
   priority: string;
   status: string;
   created_date: string;
+  managers: string[];
 }
 
 const Groups: React.FC = () => {
@@ -36,6 +36,7 @@ const Groups: React.FC = () => {
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [data, setData] = useState<DataType[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -43,26 +44,36 @@ const Groups: React.FC = () => {
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
   const { organizationId } = useOrganization();
+  const [messageApi, contextHolder] = message.useMessage();
 
   const fetchGroups = async () => {
-    if (typeof organizationId === 'undefined') return;
+    if (typeof organizationId === "undefined") return;
     try {
       const res = await fetch(`/api/groups?organizationId=${organizationId}`);
       const result = await res.json();
       setData(result);
     } catch {
-      message.error("Failed to load groups.");
+      messageApi.error("Failed to load groups.");
     }
+  };
+
+  const fetchMembers = async () => {
+    if (typeof organizationId === "undefined") return;
+    const res = await fetch(`/api/members?organizationId=${organizationId}`);
+    const users = await res.json();
+    setMembers(users);
   };
 
   useEffect(() => {
     fetchGroups();
+    fetchMembers();
   }, [organizationId]);
 
   const handleAddGroup = async (values: any) => {
     const payload = {
       ...values,
       organizationid: organizationId,
+      managers: values.manager_ids || [],
     };
 
     const res = await fetch("/api/groups", {
@@ -76,22 +87,40 @@ const Groups: React.FC = () => {
       setModalVisible(false);
       fetchGroups();
     } else {
-      message.error("Failed to add group.");
+      messageApi.error("Failed to add group.");
     }
   };
 
-  const handleEdit = (record: DataType) => {
+  const handleEdit = async (record: DataType) => {
     setSelectedGroup(record);
-    editForm.setFieldsValue(record);
-    setEditModalVisible(true);
+
+    try {
+      const res = await fetch(`/api/groups/${record.key}/managers`);
+      const data = await res.json();
+
+      editForm.setFieldsValue({
+        ...record,
+        manager_ids: data.map((m: any) => m.userid),
+      });
+
+      setEditModalVisible(true);
+    } catch (err) {
+      console.error("Failed to load managers", err);
+      editForm.setFieldsValue(record);
+      setEditModalVisible(true);
+    }
   };
+
 
   const handleUpdateGroup = async (values: any) => {
     if (!selectedGroup) return;
 
     const res = await fetch(`/api/groups/${selectedGroup.key}`, {
       method: "PUT",
-      body: JSON.stringify(values),
+      body: JSON.stringify({
+        ...values,
+        managers: values.manager_ids || [],
+      }),
       headers: { "Content-Type": "application/json" },
     });
 
@@ -99,22 +128,33 @@ const Groups: React.FC = () => {
       setEditModalVisible(false);
       fetchGroups();
     } else {
-      message.error("Failed to update group.");
+      messageApi.error("Failed to update group.");
     }
   };
 
   const handleDelete = async () => {
     if (!selectedGroup) return;
 
-    const res = await fetch(`/api/groups/${selectedGroup.key}`, {
-      method: "DELETE",
-    });
+    try {
+      const res = await fetch(`/api/groups/${selectedGroup.key}`, {
+        method: "DELETE",
+      });
 
-    if (res.ok) {
-      setDeleteModalVisible(false);
-      fetchGroups();
-    } else {
-      message.error("Failed to delete group.");
+      if (res.ok) {
+        setDeleteModalVisible(false);
+        fetchGroups();
+        messageApi.success("Group deleted successfully.");
+      } else {
+        const errorText = await res.text();
+        if (errorText.includes("violates foreign key constraint")) {
+          messageApi.error("This group still has users and cannot be deleted.");
+        } else {
+          messageApi.error("Failed to delete group.");
+        }
+      }
+    } catch (err) {
+      console.error("Deletion error:", err);
+      messageApi.error("An unexpected error occurred.");
     }
   };
 
@@ -178,6 +218,12 @@ const Groups: React.FC = () => {
 
   const columns: TableProps<DataType>["columns"] = [
     { title: "Name", dataIndex: "name", key: "name" },
+    {
+      title: "Managers",
+      dataIndex: "managers",
+      key: "managers",
+      render: (managers: string[]) => managers?.join(", "),
+    },
     { title: "Priority", dataIndex: "priority", key: "priority" },
     { title: "Status", dataIndex: "status", key: "status" },
     {
@@ -207,15 +253,19 @@ const Groups: React.FC = () => {
     },
   ];
 
+  const managerOptions = members.map((member) => ({
+    label: member.name,
+    value: member.key,
+  }));
+
   return (
     <>
+      {contextHolder}
       <div className="title flex items-center justify-between mb-4">
         <h2>Manage Groups</h2>
-        <div className="gap-2 flex">
-          <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
-            Add Group
-          </Button>
-        </div>
+        <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+          Add Group
+        </Button>
       </div>
 
       <div className="flex items-center mb-4 gap-2">
@@ -247,7 +297,7 @@ const Groups: React.FC = () => {
         rowKey="key"
       />
 
-      {/* Add Modal */}
+      {/* Add Group Modal */}
       <Modal
         title="Add New Group"
         open={modalVisible}
@@ -282,10 +332,20 @@ const Groups: React.FC = () => {
               ]}
             />
           </Form.Item>
+          <Form.Item label="Managers" name="manager_ids">
+            <Select
+              mode="multiple"
+              showSearch
+              allowClear
+              options={managerOptions}
+              placeholder="Search and select group managers"
+              optionFilterProp="label"
+            />
+          </Form.Item>
         </Form>
       </Modal>
 
-      {/* Edit Modal */}
+      {/* Edit Group Modal */}
       <Modal
         title="Edit Group"
         open={editModalVisible}
@@ -320,10 +380,20 @@ const Groups: React.FC = () => {
               ]}
             />
           </Form.Item>
+          <Form.Item label="Managers" name="manager_ids">
+            <Select
+              mode="multiple"
+              showSearch
+              allowClear
+              options={managerOptions}
+              placeholder="Search and select group managers"
+              optionFilterProp="label"
+            />
+          </Form.Item>
         </Form>
       </Modal>
 
-      {/* Delete Modal */}
+      {/* Delete Group Modal */}
       <Modal
         title="Remove Group"
         open={deleteModalVisible}
