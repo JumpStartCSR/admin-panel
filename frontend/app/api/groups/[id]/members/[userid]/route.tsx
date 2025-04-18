@@ -16,9 +16,13 @@ export async function PUT(
     );
   }
 
-  // Check if user exists in the group already
+  const gmRoleRes = await db.query(
+    `SELECT roleid FROM holmz_schema.role WHERE title = 'GM'`
+  );
+  const gmRoleId = gmRoleRes.rows[0]?.roleid;
+
   const existing = await db.query(
-    `SELECT 1 FROM holmz_schema.user_group WHERE groupid = $1 AND userid = $2`,
+    `SELECT group_role FROM holmz_schema.user_group WHERE groupid = $1 AND userid = $2`,
     [groupid, userid]
   );
 
@@ -29,13 +33,52 @@ export async function PUT(
     );
   }
 
-  // Update the user's group role
+  const oldRole = existing.rows[0].group_role;
+
+  // Prevent removing last GM
+  if (oldRole === "GM" && role !== "GM") {
+    const gmCountRes = await db.query(
+      `SELECT COUNT(*) FROM holmz_schema.user_group WHERE groupid = $1 AND group_role = 'GM'`,
+      [groupid]
+    );
+    const gmCount = parseInt(gmCountRes.rows[0].count);
+    if (gmCount === 1) {
+      return NextResponse.json(
+        { error: "At least one Group Manager is required." },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Update group role
   await db.query(
-    `UPDATE holmz_schema.user_group
-     SET group_role = $1
-     WHERE groupid = $2 AND userid = $3`,
+    `UPDATE holmz_schema.user_group SET group_role = $1 WHERE groupid = $2 AND userid = $3`,
     [role, groupid, userid]
   );
+
+  if (role === "GM") {
+    const hasGMRole = await db.query(
+      `SELECT 1 FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
+      [userid, gmRoleId]
+    );
+    if (hasGMRole.rowCount === 0) {
+      await db.query(
+        `INSERT INTO holmz_schema.user_role (userid, roleid) VALUES ($1, $2)`,
+        [userid, gmRoleId]
+      );
+    }
+  } else if (oldRole === "GM") {
+    const stillGM = await db.query(
+      `SELECT 1 FROM holmz_schema.user_group WHERE userid = $1 AND group_role = 'GM'`,
+      [userid]
+    );
+    if (stillGM.rowCount === 0) {
+      await db.query(
+        `DELETE FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
+        [userid, gmRoleId]
+      );
+    }
+  }
 
   return NextResponse.json({ updated: true });
 }
@@ -54,32 +97,48 @@ export async function DELETE(
     );
   }
 
-  // First, get the role ID of GM for possible cleanup
   const gmRoleRes = await db.query(
     `SELECT roleid FROM holmz_schema.role WHERE title = 'GM'`
   );
   const gmRoleId = gmRoleRes.rows[0]?.roleid;
 
-  // Delete from user_group
+  const roleRes = await db.query(
+    `SELECT group_role FROM holmz_schema.user_group WHERE userid = $1 AND groupid = $2`,
+    [userid, groupid]
+  );
+  const role = roleRes.rows[0]?.group_role;
+
+  // Prevent removing last GM
+  if (role === "GM") {
+    const gmCountRes = await db.query(
+      `SELECT COUNT(*) FROM holmz_schema.user_group WHERE groupid = $1 AND group_role = 'GM'`,
+      [groupid]
+    );
+    const gmCount = parseInt(gmCountRes.rows[0].count);
+    if (gmCount === 1) {
+      return NextResponse.json(
+        { error: "Cannot remove the last Group Manager." },
+        { status: 400 }
+      );
+    }
+  }
+
   await db.query(
-    `DELETE FROM holmz_schema.user_group
-     WHERE groupid = $1 AND userid = $2`,
+    `DELETE FROM holmz_schema.user_group WHERE groupid = $1 AND userid = $2`,
     [groupid, userid]
   );
 
-  // If they no longer manage any groups, remove GM role from user
-  const stillGM = await db.query(
-    `SELECT 1 FROM holmz_schema.user_group
-     WHERE userid = $1 AND group_role = 'GM'`,
-    [userid]
-  );
-
-  if (stillGM.rowCount === 0) {
-    await db.query(
-      `DELETE FROM holmz_schema.user_role
-       WHERE userid = $1 AND roleid = $2`,
-      [userid, gmRoleId]
+  if (role === "GM") {
+    const stillGM = await db.query(
+      `SELECT 1 FROM holmz_schema.user_group WHERE userid = $1 AND group_role = 'GM'`,
+      [userid]
     );
+    if (stillGM.rowCount === 0) {
+      await db.query(
+        `DELETE FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
+        [userid, gmRoleId]
+      );
+    }
   }
 
   return new NextResponse(null, { status: 204 });

@@ -10,11 +10,7 @@ export async function GET(
 
   const result = await db.query(
     `
-    SELECT u.userid AS key, u.name, u.status, 
-           CASE ug.group_role 
-             WHEN 'GM' THEN 'Group Manager'
-             ELSE 'Individual'
-           END AS role
+    SELECT u.userid AS key, u.name, u.status, ug.group_role AS role
     FROM holmz_schema.user_group ug
     JOIN holmz_schema."user" u ON u.userid = ug.userid
     WHERE ug.groupid = $1
@@ -30,7 +26,7 @@ export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const groupid = parseInt(params.id);
+  const groupid = await parseInt(params.id);
   const { userIds, role } = await req.json();
 
   if (!Array.isArray(userIds) || userIds.length === 0 || !role) {
