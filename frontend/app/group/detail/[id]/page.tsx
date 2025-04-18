@@ -13,6 +13,7 @@ import {
   Spin,
   Modal,
   Select,
+  message,
 } from "antd";
 import {
   PlusOutlined,
@@ -21,6 +22,7 @@ import {
   DownOutlined,
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
+import { useOrganization } from "@/app/context/org-context";
 
 interface GroupDetailProps {
   groupId: string;
@@ -56,6 +58,8 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   const [inviteRole, setInviteRole] = useState<"GM" | "Individual">(
     "Individual"
   );
+  const [messageApi, contextHolder] = message.useMessage();
+  const { organizationId } = useOrganization();
 
   useEffect(() => {
     const fetchGroup = async () => {
@@ -82,7 +86,9 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
 
     const fetchOrgMembers = async () => {
       try {
-        const res = await fetch(`/api/members`);
+        const res = await fetch(
+          `/api/members?organizationId=${organizationId}`
+        );
         const data = await res.json();
         setOrgMembers(data);
       } catch (err) {
@@ -94,6 +100,16 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
     fetchMembers();
     fetchOrgMembers();
   }, [groupId]);
+
+  const refreshMembers = async () => {
+    try {
+      const res = await fetch(`/api/groups/${groupId}/members`);
+      const data = await res.json();
+      setMembers(data);
+    } catch (err) {
+      console.error("Failed to refresh members", err);
+    }
+  };
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -115,13 +131,15 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   const columns: TableProps<MemberData>["columns"] = [
     { title: "Name", dataIndex: "name", key: "name" },
     { title: "Role", dataIndex: "role", key: "role" },
-    { title: "Status", dataIndex: "status", key: "status" },
+    // { title: "Status", dataIndex: "status", key: "status" },
     {
       title: "Controls",
       key: "controls",
-      render: () => (
+      render: (_, record) => (
         <Space>
-          <Button type="link">Edit</Button>
+          <Button type="link" >
+            Edit
+          </Button>
           <Button type="link" danger>
             Remove
           </Button>
@@ -173,11 +191,31 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
     value: m.key,
   }));
 
-  const handleInviteSubmit = () => {
-    // TODO: API call to /api/groups/:groupid/members
-    setInviteModalVisible(false);
-    setInviteSelection([]);
-    setInviteRole("Individual");
+  const handleInviteSubmit = async () => {
+    try {
+      const res = await fetch(`/api/groups/${groupId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userIds: inviteSelection,
+          role: inviteRole,
+        }),
+      });
+
+      if (res.ok) {
+        messageApi.success("Members invited successfully");
+        setInviteModalVisible(false);
+        setInviteSelection([]);
+        setInviteRole("Individual");
+        await refreshMembers();
+      } else {
+        const error = await res.json();
+        messageApi.error(error.error || "Failed to invite members.");
+      }
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Unexpected error occurred");
+    }
   };
 
   if (loading) {
@@ -204,6 +242,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
 
   return (
     <div>
+      {contextHolder}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-4">
           <Button onClick={onBack}>← Back</Button>

@@ -242,13 +242,19 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
       key: "controls",
       render: (_, record) => (
         <Space>
-          <Button type="link" onClick={() => handleEdit(record)}>
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(record);
+            }}>
             Edit
           </Button>
           <Button
             type="link"
             danger
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setSelectedGroup(record);
               setDeleteModalVisible(true);
             }}>
@@ -258,7 +264,6 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
       ),
     },
   ];
-
 
   const managerOptions = members.map((member) => ({
     label: member.name,
