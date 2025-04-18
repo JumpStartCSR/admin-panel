@@ -13,7 +13,7 @@ export async function GET(
     SELECT u.userid AS key, u.name, u.status, 
            CASE ug.group_role 
              WHEN 'GM' THEN 'Group Manager'
-             ELSE 'Member'
+             ELSE 'Individual'
            END AS role
     FROM holmz_schema.user_group ug
     JOIN holmz_schema."user" u ON u.userid = ug.userid

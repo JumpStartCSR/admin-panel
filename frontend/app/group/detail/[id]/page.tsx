@@ -54,10 +54,14 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<MemberData | null>(null);
   const [inviteSelection, setInviteSelection] = useState<string[]>([]);
   const [inviteRole, setInviteRole] = useState<"GM" | "Individual">(
     "Individual"
   );
+  const [editRole, setEditRole] = useState<"GM" | "Individual">("Individual");
   const [messageApi, contextHolder] = message.useMessage();
   const { organizationId } = useOrganization();
 
@@ -77,7 +81,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
     const fetchMembers = async () => {
       try {
         const res = await fetch(`/api/groups/${groupId}/members`);
-        const data = await res.json();
+        const data = await res.json()
         setMembers(data);
       } catch (err) {
         console.error("Failed to fetch group members", err);
@@ -128,73 +132,9 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
     return matchSearch && matchStatus && matchRole;
   });
 
-  const columns: TableProps<MemberData>["columns"] = [
-    { title: "Name", dataIndex: "name", key: "name" },
-    { title: "Role", dataIndex: "role", key: "role" },
-    // { title: "Status", dataIndex: "status", key: "status" },
-    {
-      title: "Controls",
-      key: "controls",
-      render: (_, record) => (
-        <Space>
-          <Button type="link" >
-            Edit
-          </Button>
-          <Button type="link" danger>
-            Remove
-          </Button>
-        </Space>
-      ),
-    },
-  ];
-
-  const statusMenu = (
-    <Menu>
-      {["Onboarded", "Pending", "Deactivated"].map((status) => (
-        <Menu.Item
-          key={status}
-          onClick={() =>
-            setSelectedStatuses((prev) =>
-              prev.includes(status)
-                ? prev.filter((s) => s !== status)
-                : [...prev, status]
-            )
-          }>
-          <Checkbox checked={selectedStatuses.includes(status)}>
-            {status}
-          </Checkbox>
-        </Menu.Item>
-      ))}
-    </Menu>
-  );
-
-  const roleMenu = (
-    <Menu>
-      {["GM", "Individual"].map((role) => (
-        <Menu.Item
-          key={role}
-          onClick={() =>
-            setSelectedRoles((prev) =>
-              prev.includes(role)
-                ? prev.filter((r) => r !== role)
-                : [...prev, role]
-            )
-          }>
-          <Checkbox checked={selectedRoles.includes(role)}>{role}</Checkbox>
-        </Menu.Item>
-      ))}
-    </Menu>
-  );
-
-  const inviteOptions = orgMembers.map((m) => ({
-    label: m.name,
-    value: m.key,
-  }));
-
   const handleInviteSubmit = async () => {
     const existingIds = members.map((m) => m.key);
     const newIds = inviteSelection.filter((id) => !existingIds.includes(id));
-
     if (newIds.length === 0) {
       messageApi.warning("All selected users are already in the group.");
       return;
@@ -204,10 +144,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
       const res = await fetch(`/api/groups/${groupId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userIds: newIds,
-          role: inviteRole,
-        }),
+        body: JSON.stringify({ userIds: newIds, role: inviteRole }),
       });
 
       if (res.ok) {
@@ -226,28 +163,99 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
     }
   };
 
+  const handleEditSubmit = async () => {
+    if (!selectedUser) return;
 
-  if (loading) {
-    return (
-      <div>
-        <Button onClick={onBack} style={{ marginBottom: 16 }}>
-          Back to Groups
-        </Button>
-        <Spin size="large" />
-      </div>
-    );
-  }
+    try {
+      const res = await fetch(
+        `/api/groups/${groupId}/members/${selectedUser.key}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: editRole }),
+        }
+      );
 
-  if (!group) {
-    return (
-      <div>
-        <Button onClick={onBack} style={{ marginBottom: 16 }}>
-          Back to Groups
-        </Button>
-        <p>Group {groupId} not found.</p>
-      </div>
-    );
-  }
+      if (res.ok) {
+        messageApi.success("Member role updated");
+        setEditModalVisible(false);
+        setSelectedUser(null);
+        await refreshMembers();
+      } else {
+        const error = await res.json();
+        messageApi.error(error.error || "Failed to update role.");
+      }
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Unexpected error occurred");
+    }
+  };
+
+  const handleRemove = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const res = await fetch(
+        `/api/groups/${groupId}/members/${selectedUser.key}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (res.ok) {
+        messageApi.success("Member removed from group");
+        setDeleteModalVisible(false);
+        setSelectedUser(null);
+        await refreshMembers();
+      } else {
+        const error = await res.json();
+        messageApi.error(error.error || "Failed to remove member.");
+      }
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Unexpected error occurred");
+    }
+  };
+
+  const columns: TableProps<MemberData>["columns"] = [
+    { title: "Name", dataIndex: "name", key: "name" },
+    {
+      title: "Role",
+      dataIndex: "role",
+      key: "role",
+    },
+    {
+      title: "Controls",
+      key: "controls",
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            onClick={() => {
+              setSelectedUser(record);
+              setEditRole(record.role as "GM" | "Individual");
+              setEditModalVisible(true);
+            }}>
+            Edit
+          </Button>
+          <Button
+            type="link"
+            danger
+            onClick={() => {
+              setSelectedUser(record);
+              setDeleteModalVisible(true);
+            }}>
+            Remove
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  const inviteOptions = orgMembers.map((m) => ({
+    label: m.name,
+    value: m.key,
+  }));
 
   return (
     <div>
@@ -255,7 +263,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-4">
           <Button onClick={onBack}>← Back</Button>
-          <h2 className="text-xl font-semibold">{group.name}</h2>
+          <h2 className="text-xl font-semibold">{group?.name}</h2>
         </div>
         <Button
           icon={<PlusOutlined />}
@@ -279,12 +287,26 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ maxWidth: 300 }}
             />
-            <Dropdown overlay={statusMenu} trigger={["click"]}>
-              <Button type="text">
-                Status <DownOutlined />
-              </Button>
-            </Dropdown>
-            <Dropdown overlay={roleMenu} trigger={["click"]}>
+            <Dropdown
+              overlay={
+                <Menu>
+                  {["GM", "Individual"].map((role) => (
+                    <Menu.Item
+                      key={role}
+                      onClick={() =>
+                        setSelectedRoles((prev) =>
+                          prev.includes(role)
+                            ? prev.filter((r) => r !== role)
+                            : [...prev, role]
+                        )
+                      }>
+                      <Checkbox checked={selectedRoles.includes(role)}>
+                        {role === "GM" ? "Group Manager" : "Individual"}
+                      </Checkbox>
+                    </Menu.Item>
+                  ))}
+                </Menu>
+              }>
               <Button type="text">
                 Role <DownOutlined />
               </Button>
@@ -294,7 +316,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
             </Button>
           </div>
 
-          <Table<MemberData>
+          <Table
             columns={columns}
             dataSource={filteredMembers}
             rowKey="key"
@@ -303,25 +325,21 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
         </div>
 
         <div style={{ width: 320 }}>
-          <Tabs
-            defaultActiveKey="details"
-            items={[{ key: "details", label: "Details" }]}
-          />
           <Card title="Properties">
             <p>
-              <strong>Name:</strong> {group.name}
+              <strong>Name:</strong> {group?.name}
             </p>
             <p>
-              <strong>Manager:</strong> {group.managers.join(", ") || "None"}
+              <strong>Manager:</strong> {group?.managers.join(", ") || "None"}
             </p>
             <p>
-              <strong>Priority:</strong> {group.priority}
+              <strong>Priority:</strong> {group?.priority}
             </p>
             <p>
-              <strong>Status:</strong> {group.status}
+              <strong>Status:</strong> {group?.status}
             </p>
             <p>
-              <strong>Created Date:</strong> {group.created_date}
+              <strong>Created Date:</strong> {group?.created_date}
             </p>
           </Card>
         </div>
@@ -356,6 +374,35 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
             { value: "Individual", label: "Individual" },
           ]}
         />
+      </Modal>
+
+      <Modal
+        open={editModalVisible}
+        title="Edit Member Role"
+        onCancel={() => setEditModalVisible(false)}
+        onOk={handleEditSubmit}
+        okText="Update">
+        <label>Update Role</label>
+        <Select
+          style={{ width: "100%" }}
+          value={editRole}
+          onChange={(val) => setEditRole(val)}
+          options={[
+            { value: "GM", label: "Group Manager" },
+            { value: "Individual", label: "Individual" },
+          ]}
+        />
+      </Modal>
+
+      <Modal
+        open={deleteModalVisible}
+        title="Remove Member"
+        onCancel={() => setDeleteModalVisible(false)}
+        onOk={handleRemove}
+        okText="Remove"
+        okButtonProps={{ danger: true }}>
+        Are you sure you want to remove <strong>{selectedUser?.name}</strong>{" "}
+        from the group?
       </Modal>
     </div>
   );
