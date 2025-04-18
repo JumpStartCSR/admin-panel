@@ -20,8 +20,6 @@ import {
   SearchOutlined,
   CloseOutlined,
   DownOutlined,
-  EditOutlined,
-  DeleteOutlined,
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { useOrganization } from "@/app/context/org-context";
@@ -44,7 +42,7 @@ interface MemberData {
   key: string;
   name: string;
   status: string;
-  role: "GM" | "Individual";
+  role: "GM" | "Member";
 }
 
 const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
@@ -57,9 +55,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [inviteSelection, setInviteSelection] = useState<string[]>([]);
-  const [inviteRole, setInviteRole] = useState<"GM" | "Individual">(
-    "Individual"
-  );
+  const [inviteRole, setInviteRole] = useState<"GM" | "Member">("Member");
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
@@ -135,7 +131,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   });
 
   const roleLabel = (role: string) =>
-    role === "GM" ? "Group Manager" : "Individual";
+    role === "GM" ? "Group Manager" : "Member";
 
   const columns: TableProps<MemberData>["columns"] = [
     { title: "Name", dataIndex: "name", key: "name" },
@@ -188,7 +184,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
         messageApi.success("Members invited successfully");
         setInviteModalVisible(false);
         setInviteSelection([]);
-        setInviteRole("Individual");
+        setInviteRole("Member");
         await refreshMembers();
       } else {
         const error = await res.json();
@@ -258,38 +254,18 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
     }
   };
 
-  const statusMenu = (
-    <Menu>
-      {["Onboarded", "Pending", "Deactivated"].map((status) => (
-        <Menu.Item
-          key={status}
-          onClick={() => {
-            setSelectedStatuses((prev) =>
-              prev.includes(status)
-                ? prev.filter((s) => s !== status)
-                : [...prev, status]
-            );
-          }}>
-          <Checkbox checked={selectedStatuses.includes(status)}>
-            {status}
-          </Checkbox>
-        </Menu.Item>
-      ))}
-    </Menu>
-  );
-
   const roleMenu = (
     <Menu>
-      {["GM", "Individual"].map((role) => (
+      {["GM", "Member"].map((role) => (
         <Menu.Item
           key={role}
-          onClick={() => {
+          onClick={() =>
             setSelectedRoles((prev) =>
               prev.includes(role)
                 ? prev.filter((r) => r !== role)
                 : [...prev, role]
-            );
-          }}>
+            )
+          }>
           <Checkbox checked={selectedRoles.includes(role)}>
             {roleLabel(role)}
           </Checkbox>
@@ -303,9 +279,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
     value: m.key,
   }));
 
-  if (loading) {
-    return <Spin size="large" />;
-  }
+  if (loading) return <Spin size="large" />;
 
   return (
     <div>
@@ -337,11 +311,6 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ maxWidth: 300 }}
             />
-            {/* <Dropdown overlay={statusMenu}>
-              <Button type="text">
-                Status <DownOutlined />
-              </Button>
-            </Dropdown> */}
             <Dropdown overlay={roleMenu}>
               <Button type="text">
                 Role <DownOutlined />
@@ -408,7 +377,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
           onChange={(val) => setInviteRole(val)}
           options={[
             { value: "GM", label: "Group Manager" },
-            { value: "Individual", label: "Individual" },
+            { value: "Member", label: "Member" },
           ]}
           style={{ width: "100%" }}
         />
@@ -424,7 +393,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
           onChange={(val) => setInviteRole(val)}
           options={[
             { value: "GM", label: "Group Manager" },
-            { value: "Individual", label: "Individual" },
+            { value: "Member", label: "Member" },
           ]}
           style={{ width: "100%" }}
         />
