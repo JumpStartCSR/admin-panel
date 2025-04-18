@@ -29,6 +29,7 @@ interface DataType {
   status: string;
   created_date: string;
   managers: string[];
+  member_count: number;
 }
 interface GroupsProps {
   onViewDetail?: (id: number) => void;
@@ -230,6 +231,7 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
       key: "managers",
       render: (managers: string[]) => managers?.join(", "),
     },
+    { title: "Members", dataIndex: "member_count", key: "member_count" },
     { title: "Priority", dataIndex: "priority", key: "priority" },
     { title: "Status", dataIndex: "status", key: "status" },
     {

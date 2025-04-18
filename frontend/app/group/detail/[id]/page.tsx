@@ -356,7 +356,6 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
             columns={columns}
             dataSource={filteredMembers}
             rowKey="key"
-            pagination={false}
           />
         </div>
 

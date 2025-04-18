@@ -21,7 +21,8 @@ export async function GET(req: Request) {
       g.priority,
       g.status,
       TO_CHAR(g.created_date, 'DD Mon, YYYY') AS created_date,
-      ARRAY_AGG(u.name) FILTER (WHERE ug.group_role = 'GM') AS managers
+      ARRAY_AGG(u.name) FILTER (WHERE ug.group_role = 'GM') AS managers,
+      COUNT(DISTINCT ug.userid) AS member_count
     FROM holmz_schema."group" g
     LEFT JOIN holmz_schema.user_group ug ON g.groupid = ug.groupid
     LEFT JOIN holmz_schema."user" u ON ug.userid = u.userid

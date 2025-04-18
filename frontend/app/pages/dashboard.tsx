@@ -1,39 +1,15 @@
 "use client";
-import React from "react";
-import { Card, Avatar, Row, Col, Space } from "antd";
+import React, { useEffect, useState } from "react";
+import { Card, Avatar, Row, Col, Space, message } from "antd";
 import { UserOutlined, ProductOutlined } from "@ant-design/icons";
 import { useOrganization } from "../context/org-context";
 
-const groupsData = [
-  {
-    id: 1,
-    name: "VA Pilot Group",
-    description: "Short group description truncated here..",
-    members: 21,
-    leader: "Alex Smith",
-  },
-  {
-    id: 2,
-    name: "Physical Therapy Group A",
-    description: "Short group description truncated here..",
-    members: 12,
-    leader: "Alex Smith",
-  },
-  {
-    id: 3,
-    name: "Physical Therapy Group B",
-    description: "Short group description truncated here..",
-    members: 18,
-    leader: "Alex Smith",
-  },
-  {
-    id: 4,
-    name: "Rehabilitation Center",
-    description: "Short group description truncated here..",
-    members: 32,
-    leader: "Alex Smith",
-  },
-];
+interface Group {
+  key: number;
+  name: string;
+  managers: string[];
+  member_count: number;
+}
 
 interface DashboardProps {
   onKeyChange: (key: string) => void;
@@ -50,29 +26,42 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
-  const userName = user.username;
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [messageApi, contextHolder] = message.useMessage();
+  const { organizationId } = useOrganization();
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      if (typeof organizationId === "undefined") return;
+      try {
+        const res = await fetch(`/api/groups?organizationId=${organizationId}`);
+        const data = await res.json();
+        setGroups(data.slice(0, 6));
+      } catch {
+        messageApi.error("Failed to load group data.");
+      }
+    };
+
+    fetchGroups();
+  }, [organizationId]);
 
   return (
     <>
-      <h1>Welcome Home, {userName}!</h1>
+      {contextHolder}
+      <h1>Welcome Home, {user.username}!</h1>
       <div className="title flex items-center justify-between mt-8 mb-4">
         <div>
           <div className="flex items-center gap-3">
             <h3>Your Groups</h3>
-            <a
-              onClick={() => {
-                onKeyChange("groups");
-              }}>
-              view all
-            </a>
+            <a onClick={() => onKeyChange("groups")}>view all</a>
           </div>
           <h6>Manage and access your groups here</h6>
         </div>
       </div>
 
       <Row gutter={[16, 16]}>
-        {groupsData.map((group) => (
-          <Col key={group.id}>
+        {groups.map((group) => (
+          <Col key={group.key}>
             <Card
               hoverable
               bordered
@@ -106,17 +95,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
                   <div style={{ fontWeight: "bold", fontSize: "16px" }}>
                     {group.name}
                   </div>
-                  <div style={{ color: "#8c8c8c", marginBottom: "4px" }}>
-                    {group.description}
-                  </div>
                   <div style={{ fontSize: "14px", color: "#595959" }}>
-                    {group.members} Members • Lead by{" "}
+                    {group.member_count} Members • Lead by{" "}
                     <Avatar
                       size="small"
                       icon={<UserOutlined />}
                       style={{ marginRight: "4px" }}
                     />
-                    {group.leader}
+                    {group.managers[0] || "—"}
                   </div>
                 </div>
               </Space>
