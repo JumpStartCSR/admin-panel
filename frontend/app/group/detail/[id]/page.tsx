@@ -192,12 +192,20 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   }));
 
   const handleInviteSubmit = async () => {
+    const existingIds = members.map((m) => m.key);
+    const newIds = inviteSelection.filter((id) => !existingIds.includes(id));
+
+    if (newIds.length === 0) {
+      messageApi.warning("All selected users are already in the group.");
+      return;
+    }
+
     try {
       const res = await fetch(`/api/groups/${groupId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userIds: inviteSelection,
+          userIds: newIds,
           role: inviteRole,
         }),
       });
@@ -217,6 +225,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
       messageApi.error("Unexpected error occurred");
     }
   };
+
 
   if (loading) {
     return (
