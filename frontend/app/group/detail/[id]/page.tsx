@@ -40,6 +40,7 @@ interface MemberData {
   key: string;
   name: string;
   status: string;
+  role: string;
 }
 
 const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
@@ -48,9 +49,13 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   const [orgMembers, setOrgMembers] = useState<MemberData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [inviteSelection, setInviteSelection] = useState<string[]>([]);
+  const [inviteRole, setInviteRole] = useState<"GM" | "Individual">(
+    "Individual"
+  );
 
   useEffect(() => {
     const fetchGroup = async () => {
@@ -93,6 +98,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedStatuses([]);
+    setSelectedRoles([]);
   };
 
   const filteredMembers = members.filter((item) => {
@@ -101,11 +107,14 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
       .includes(searchQuery.toLowerCase());
     const matchStatus =
       selectedStatuses.length === 0 || selectedStatuses.includes(item.status);
-    return matchSearch && matchStatus;
+    const matchRole =
+      selectedRoles.length === 0 || selectedRoles.includes(item.role);
+    return matchSearch && matchStatus && matchRole;
   });
 
   const columns: TableProps<MemberData>["columns"] = [
     { title: "Name", dataIndex: "name", key: "name" },
+    { title: "Role", dataIndex: "role", key: "role" },
     { title: "Status", dataIndex: "status", key: "status" },
     {
       title: "Controls",
@@ -141,15 +150,34 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
     </Menu>
   );
 
+  const roleMenu = (
+    <Menu>
+      {["GM", "Individual"].map((role) => (
+        <Menu.Item
+          key={role}
+          onClick={() =>
+            setSelectedRoles((prev) =>
+              prev.includes(role)
+                ? prev.filter((r) => r !== role)
+                : [...prev, role]
+            )
+          }>
+          <Checkbox checked={selectedRoles.includes(role)}>{role}</Checkbox>
+        </Menu.Item>
+      ))}
+    </Menu>
+  );
+
   const inviteOptions = orgMembers.map((m) => ({
     label: m.name,
     value: m.key,
   }));
 
   const handleInviteSubmit = () => {
-    // Future: Implement API call
+    // TODO: API call to /api/groups/:groupid/members
     setInviteModalVisible(false);
     setInviteSelection([]);
+    setInviteRole("Individual");
   };
 
   if (loading) {
@@ -208,6 +236,11 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
                 Status <DownOutlined />
               </Button>
             </Dropdown>
+            <Dropdown overlay={roleMenu} trigger={["click"]}>
+              <Button type="text">
+                Role <DownOutlined />
+              </Button>
+            </Dropdown>
             <Button type="text" onClick={clearFilters} icon={<CloseOutlined />}>
               Clear Filters
             </Button>
@@ -252,6 +285,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
         onCancel={() => setInviteModalVisible(false)}
         onOk={handleInviteSubmit}
         okText="Invite">
+        <label>Select Members</label>
         <Select
           mode="multiple"
           allowClear
@@ -259,10 +293,20 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
           value={inviteSelection}
           onChange={(val) => setInviteSelection(val)}
           placeholder="Search and select members"
-          style={{ width: "100%" }}
+          style={{ width: "100%", marginBottom: 16 }}
           options={inviteOptions}
           optionFilterProp="label"
           suffixIcon={<SearchOutlined />}
+        />
+        <label>Assign Role</label>
+        <Select
+          style={{ width: "100%" }}
+          value={inviteRole}
+          onChange={(val) => setInviteRole(val)}
+          options={[
+            { value: "GM", label: "Group Manager" },
+            { value: "Individual", label: "Individual" },
+          ]}
         />
       </Modal>
     </div>
