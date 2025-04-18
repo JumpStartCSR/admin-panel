@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Card, Avatar, Row, Col, Space, message } from "antd";
+import { Card, Avatar, Row, Col, Space, message, Spin } from "antd";
 import { UserOutlined, ProductOutlined } from "@ant-design/icons";
 import { useOrganization } from "../context/org-context";
 
@@ -27,6 +27,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
   const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
   const { organizationId } = useOrganization();
 
@@ -39,6 +40,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
         setGroups(data.slice(0, 6));
       } catch {
         messageApi.error("Failed to load group data.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -59,57 +62,63 @@ const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
         </div>
       </div>
 
-      <Row gutter={[16, 16]}>
-        {groups.map((group) => (
-          <Col key={group.key}>
-            <Card
-              hoverable
-              bordered
-              style={{
-                minWidth: "360px",
-                minHeight: "100px",
-                padding: "5px",
-                display: "flex",
-                alignItems: "center",
-                borderRadius: "8px",
-              }}
-              onClick={() => onKeyChange("groups")}>
-              <Space
-                style={{ display: "flex", alignItems: "center" }}
-                size="large">
-                <div
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    backgroundColor: "#e6f7ff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "8px",
-                  }}>
-                  <ProductOutlined
-                    style={{ fontSize: "24px", color: "#1677ff" }}
-                  />
-                </div>
-                <div>
-                  <div style={{ fontWeight: "bold", fontSize: "16px" }}>
-                    {group.name}
-                  </div>
-                  <div style={{ fontSize: "14px", color: "#595959" }}>
-                    {group.member_count} Members • Lead by{" "}
-                    <Avatar
-                      size="small"
-                      icon={<UserOutlined />}
-                      style={{ marginRight: "4px" }}
+      {loading ? (
+        <div className="flex justify-center items-center py-10">
+          <Spin size="large" />
+        </div>
+      ) : (
+        <Row gutter={[16, 16]}>
+          {groups.map((group) => (
+            <Col key={group.key}>
+              <Card
+                hoverable
+                bordered
+                style={{
+                  minWidth: "360px",
+                  minHeight: "100px",
+                  padding: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                  borderRadius: "8px",
+                }}
+                onClick={() => onKeyChange("groups")}>
+                <Space
+                  style={{ display: "flex", alignItems: "center" }}
+                  size="large">
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      backgroundColor: "#e6f7ff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "8px",
+                    }}>
+                    <ProductOutlined
+                      style={{ fontSize: "24px", color: "#1677ff" }}
                     />
-                    {group.managers[0] || "—"}
                   </div>
-                </div>
-              </Space>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+                  <div>
+                    <div style={{ fontWeight: "bold", fontSize: "16px" }}>
+                      {group.name}
+                    </div>
+                    <div style={{ fontSize: "14px", color: "#595959" }}>
+                      {group.member_count} Members • Lead by{" "}
+                      <Avatar
+                        size="small"
+                        icon={<UserOutlined />}
+                        style={{ marginRight: "4px" }}
+                      />
+                      {group.managers[0] || "—"}
+                    </div>
+                  </div>
+                </Space>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
     </>
   );
 };
