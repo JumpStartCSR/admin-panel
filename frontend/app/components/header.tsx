@@ -39,7 +39,7 @@ const Header: React.FC = () => {
         </h1>
       </div>
       <div className="flex items-center gap-1.5">
-        <div style={{ width: "300px" }} className="flex">
+        {/* <div style={{ width: "300px" }} className="flex">
           <Input
             size="large"
             placeholder="Search groups, members and more"
@@ -51,7 +51,7 @@ const Header: React.FC = () => {
           type="text"
           shape="circle">
           <BellOutlined style={{ fontSize: "20px" }} />
-        </Button>
+        </Button> */}
 
         <Dropdown overlay={menu} trigger={["click"]}>
           <Button type="primary" shape="circle">

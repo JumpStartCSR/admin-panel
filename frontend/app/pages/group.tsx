@@ -223,13 +223,6 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      render: (_, record) => (
-        <Button
-          type="link"
-          onClick={() => onViewDetail?.(parseInt(record.key))}>
-          {record.name}
-        </Button>
-      ),
     },
     {
       title: "Managers",
@@ -309,6 +302,10 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
         columns={columns}
         dataSource={filteredData}
         rowKey="key"
+        onRow={(record) => ({
+          onClick: () => onViewDetail?.(parseInt(record.key)),
+          style: { cursor: "pointer" },
+        })}
       />
 
       {/* Add Group Modal */}

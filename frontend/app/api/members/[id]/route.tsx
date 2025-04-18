@@ -6,7 +6,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const userid = parseInt(params.id);
-  const { name, status, roles } = await req.json();
+  const { status, roles } = await req.json();
 
   const gmRoleRes = await db.query(
     `SELECT roleid FROM "role" WHERE title = 'GM'`
@@ -32,14 +32,10 @@ export async function PUT(
     }
   }
 
-  await db.query(
-    `
-    UPDATE "user"
-    SET name = $1, status = $2
-    WHERE userid = $3
-    `,
-    [name, status, userid]
-  );
+  await db.query(`UPDATE "user" SET status = $1 WHERE userid = $2`, [
+    status,
+    userid,
+  ]);
 
   await db.query(`DELETE FROM "user_role" WHERE userid = $1`, [userid]);
 
@@ -49,6 +45,7 @@ export async function PUT(
       [role]
     );
     const roleid = roleRes.rows[0]?.roleid;
+
     if (roleid == 0 || roleid == 1 || roleid == 2 || roleid == 3) {
       await db.query(
         `INSERT INTO "user_role" (userid, roleid) VALUES ($1, $2)`,

@@ -357,9 +357,9 @@ const Members: React.FC = () => {
         onOk={() => editForm.submit()}
         okText="Save Changes">
         <Form layout="vertical" form={editForm} onFinish={handleUpdateMember}>
-          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+          {/* <Form.Item name="name" label="Name" rules={[{ required: true }]}>
             <Input />
-          </Form.Item>
+          </Form.Item> */}
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
               mode="multiple"
