@@ -21,6 +21,7 @@ import {
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { useOrganization } from "../context/org-context";
+import { useAuth } from "../context/auth-context";
 
 interface DataType {
   key: string;
@@ -49,6 +50,17 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
   const [editForm] = Form.useForm();
   const { organizationId } = useOrganization();
   const [messageApi, contextHolder] = message.useMessage();
+  const { user } = useAuth();
+
+  const currentUserRoles = user?.roles || [];
+  const isSuperAdmin = currentUserRoles.includes("Super Admin");
+  const isAdmin = currentUserRoles.includes("Admin");
+  const isGM = currentUserRoles.includes("GM");
+  console.log(currentUserRoles)
+
+  const canCreateGroup = isSuperAdmin || isAdmin || isGM;
+  const canEditDeleteGroup = isSuperAdmin || isAdmin || isGM;
+  const canInviteMember = isSuperAdmin || isAdmin || isGM;
 
   const fetchGroups = async () => {
     if (typeof organizationId === "undefined") return;
@@ -249,7 +261,8 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
             onClick={(e) => {
               e.stopPropagation();
               handleEdit(record);
-            }}>
+            }}
+            disabled={!canEditDeleteGroup}>
             Edit
           </Button>
           <Button
@@ -259,7 +272,8 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
               e.stopPropagation();
               setSelectedGroup(record);
               setDeleteModalVisible(true);
-            }}>
+            }}
+            disabled={!canEditDeleteGroup}>
             Remove
           </Button>
         </Space>
@@ -277,7 +291,10 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
       {contextHolder}
       <div className="title flex items-center justify-between mb-4">
         <h2>Manage Groups</h2>
-        <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+        <Button
+          icon={<PlusOutlined />}
+          onClick={() => setModalVisible(true)}
+          disabled={!canCreateGroup}>
           Add Group
         </Button>
       </div>
@@ -315,7 +332,6 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
         })}
       />
 
-      {/* Add Group Modal */}
       <Modal
         title="Add New Group"
         open={modalVisible}
@@ -366,7 +382,6 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
         </Form>
       </Modal>
 
-      {/* Edit Group Modal */}
       <Modal
         title="Edit Group"
         open={editModalVisible}
@@ -417,7 +432,6 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
         </Form>
       </Modal>
 
-      {/* Delete Group Modal */}
       <Modal
         title="Remove Group"
         open={deleteModalVisible}

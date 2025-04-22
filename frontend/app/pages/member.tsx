@@ -219,6 +219,8 @@ const Members: React.FC = () => {
     return false;
   };
 
+  const canInviteUser = isSuperAdmin || isAdmin || isGM;
+
   const roleOptions = [
     ...(isSuperAdmin ? [{ label: "Super Admin", value: "Super Admin" }] : []),
     ...(isAdmin || isSuperAdmin ? [{ label: "Admin", value: "Admin" }] : []),
@@ -285,7 +287,10 @@ const Members: React.FC = () => {
       {contextHolder}
       <div className="title flex items-center justify-between mb-4">
         <h2>Manage Members</h2>
-        <Button icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+        <Button
+          icon={<PlusOutlined />}
+          onClick={() => setModalVisible(true)}
+          disabled={!canInviteUser}>
           Invite Member
         </Button>
       </div>
