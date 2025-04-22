@@ -232,7 +232,20 @@ const Members: React.FC = () => {
       title: "Role",
       dataIndex: "roles",
       key: "roles",
-      render: (roles) => roles.join(", "),
+      render: (roles: string[]) => {
+        const rolePriority = {
+          "Super Admin": 1,
+          Admin: 2,
+          GM: 3,
+          Individual: 4,
+        };
+
+        const sorted = roles
+          .slice() // make a copy so we don't mutate original
+          .sort((a, b) => rolePriority[a] - rolePriority[b]);
+
+        return sorted.join(", ");
+      },
     },
     { title: "Status", dataIndex: "status", key: "status" },
     { title: "Date Added", dataIndex: "dateadded", key: "dateadded" },
@@ -323,7 +336,7 @@ const Members: React.FC = () => {
             validateStatus={usernameError ? "error" : ""}
             help={usernameError}
             rules={[{ required: true }]}>
-            <Input placeholder="Enter Username" />
+            <Input placeholder="Enter Holmz Username" />
           </Form.Item>
           <Form.Item name="roles" label="Role" rules={[{ required: true }]}>
             <Select
