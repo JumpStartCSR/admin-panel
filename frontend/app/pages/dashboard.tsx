@@ -39,7 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
         const data = await res.json();
         setGroups(data.slice(0, 6));
       } catch {
-        messageApi.error("Failed to load group data.");
+        // messageApi.error("Failed to load group data.");
       } finally {
         setLoading(false);
       }

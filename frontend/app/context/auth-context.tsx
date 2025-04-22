@@ -1,4 +1,5 @@
 "use client";
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -18,6 +19,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   login: (userData: User) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,19 +29,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const login = async (userData: User) => {
-    try {
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-    } catch (err) {
-      console.error("Failed to fetch roles", err);
-    }
+  const login = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
     router.push("/signin");
+  };
+
+  const refreshUser = async () => {
+    try {
+      const res = await fetch("/api/get-user-role");
+      if (!res.ok) throw new Error("Failed to refresh user");
+      const data = await res.json();
+      setUser(data);
+      localStorage.setItem("user", JSON.stringify(data));
+    } catch (err) {
+      console.error("Failed to refresh user:", err);
+      logout(); // fallback logout
+    }
   };
 
   useEffect(() => {
@@ -60,7 +71,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } else if (!isPublicRoute) {
       router.push("/signin");
     }
-  }, [pathname, router]);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      logout();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -69,6 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isLoggedIn: !!user,
         login,
         logout,
+        refreshUser,
       }}>
       {children}
     </AuthContext.Provider>

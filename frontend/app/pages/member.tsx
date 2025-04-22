@@ -46,7 +46,7 @@ const Members: React.FC = () => {
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
   const { organizationId } = useOrganization();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [messageApi, contextHolder] = message.useMessage();
 
   const currentUserRoles = user?.roles || [];
