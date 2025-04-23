@@ -23,6 +23,7 @@ import {
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { useOrganization } from "@/app/context/org-context";
+import { useAuth } from "@/app/context/auth-context";
 
 interface GroupDetailProps {
   groupId: string;
@@ -62,6 +63,14 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
 
   const [messageApi, contextHolder] = message.useMessage();
   const { organizationId } = useOrganization();
+  const { user, refreshUser } = useAuth();
+
+  const currentUserRoles = user?.roles || [];
+  const isSuperAdmin = currentUserRoles.includes("Super Admin");
+  const isAdmin = currentUserRoles.includes("Admin");
+  const isGM = currentUserRoles.includes("GM");
+
+  const canEditMember = isSuperAdmin || isAdmin || isGM;
 
   useEffect(() => {
     const fetchGroup = async () => {
@@ -147,7 +156,8 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
               setSelectedMember(record);
               setInviteRole(record.role);
               setEditModalVisible(true);
-            }}>
+            }}
+            disabled={!canEditMember}>
             Edit
           </Button>
           <Button
@@ -156,7 +166,8 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
             onClick={() => {
               setSelectedMember(record);
               setDeleteModalVisible(true);
-            }}>
+            }}
+            disabled={!canEditMember}>
             Remove
           </Button>
         </Space>
@@ -291,7 +302,8 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
         </div>
         <Button
           icon={<PlusOutlined />}
-          onClick={() => setInviteModalVisible(true)}>
+          onClick={() => setInviteModalVisible(true)}
+          disabled={!canEditMember}>
           Invite
         </Button>
       </div>
