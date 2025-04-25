@@ -3,6 +3,7 @@ import "./globals.css";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { AuthProvider } from "./context/auth-context";
 import { OrganizationProvider } from "./context/org-context";
+import ActivityTracker from "./components/ActivityTracker";
 
 export const metadata: Metadata = {
   title: "Holmz Admin Panel",
@@ -19,7 +20,10 @@ export default function RootLayout({
       <body>
         <AntdRegistry>
           <AuthProvider>
-            <OrganizationProvider>{children}</OrganizationProvider>
+            <OrganizationProvider>
+              <ActivityTracker />
+              {children}
+            </OrganizationProvider>
           </AuthProvider>
         </AntdRegistry>
       </body>
