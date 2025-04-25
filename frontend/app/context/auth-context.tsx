@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 interface User {
-  id: string;
+  id: string; // PocketBase user ID
   username: string;
   email: string;
   name: string;
@@ -32,11 +32,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = (userData: User) => {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
+    sessionStorage.setItem("sessionStart", Date.now().toString()); // ✅ Start session timer
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const start = sessionStorage.getItem("sessionStart");
+    const sessionStart = start ? parseInt(start) : null;
+
+    if (user && sessionStart) {
+      const sessionTime = Math.floor((Date.now() - sessionStart) / 1000); // seconds
+      const today = new Date().toISOString().split("T")[0];
+
+      try {
+        await fetch("/api/activity", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pb_user_id: user.id,
+            date: today,
+            timeused: sessionTime,
+            login: false,
+          }),
+          keepalive: true,
+        });
+      } catch (err) {
+        console.error("Failed to log logout activity", err);
+      }
+    }
+
     setUser(null);
     localStorage.removeItem("user");
+    sessionStorage.removeItem("sessionStart");
     router.push("/signin");
   };
 
@@ -62,6 +88,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const parsed: User = JSON.parse(stored);
         setUser(parsed);
 
+        // If session start hasn't been set yet (e.g. on refresh), reinitialize
+        if (!sessionStorage.getItem("sessionStart")) {
+          sessionStorage.setItem("sessionStart", Date.now().toString());
+        }
+
         if (isPublicRoute) {
           router.push("/");
         }
@@ -74,15 +105,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [pathname]);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      logout();
+    const handleBeforeUnload = async () => {
+      await logout();
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [user]);
 
   return (
     <AuthContext.Provider
