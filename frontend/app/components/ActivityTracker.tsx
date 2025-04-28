@@ -1,64 +1,46 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useAuth } from "../context/auth-context";
 
 const ActivityTracker = () => {
   const { user } = useAuth();
-  const sessionStartRef = useRef<number | null>(null);
-  const hasLoggedLogin = useRef(false);
 
   useEffect(() => {
-    if (!user?.id) return;
+    const handleBeforeUnload = () => {
+      if (!user) return;
 
-    sessionStartRef.current = Date.now();
-    const today = new Date().toISOString().split("T")[0];
+      const start = sessionStorage.getItem("sessionStart");
+      const sessionStart = start ? parseInt(start) : null;
+      const today = new Date().toISOString().split("T")[0];
 
-    if (!hasLoggedLogin.current) {
-      fetch("/api/activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pb_user_id: user.id,
-          date: today,
-          timeused: 0,
-          login: true,
-        }),
-      });
-      hasLoggedLogin.current = true;
-    }
+      if (sessionStart) {
+        const sessionTime = Math.floor((Date.now() - sessionStart) / 1000);
 
-    const handleUnload = () => {
-      console.log(sessionStartRef.current);
-      if (!sessionStartRef.current) return;
+        navigator.sendBeacon(
+          "/api/activity",
+          new Blob(
+            [
+              JSON.stringify({
+                pb_user_id: user.id,
+                date: today,
+                timeused: sessionTime,
+                login: false,
+              }),
+            ],
+            { type: "application/json" }
+          )
+        );
+      }
 
-      const sessionDuration = Math.floor(
-        (Date.now() - sessionStartRef.current) / 1000
-      ); // in seconds
-
-      console.log(sessionDuration)
-
-      if (sessionDuration <= 0) return;
-
-      navigator.sendBeacon(
-        "/api/activity",
-        new Blob(
-          [
-            JSON.stringify({
-              pb_user_id: user.id,
-              date: today,
-              timeused: sessionDuration,
-              login: false,
-            }),
-          ],
-          { type: "application/json" }
-        )
-      );
+      // Clear storage manually
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("sessionStart");
     };
 
-    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [user]);
 

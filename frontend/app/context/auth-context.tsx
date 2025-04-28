@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 interface User {
-  id: string; // PocketBase user ID
+  id: string;
   username: string;
   email: string;
   name: string;
@@ -17,8 +17,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
-  login: (userData: User) => void;
-  logout: () => void;
+  login: (userData: User) => Promise<void>;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -29,10 +29,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const login = (userData: User) => {
+  const login = async (userData: User) => {
+    const today = new Date().toISOString().split("T")[0];
+    sessionStorage.setItem("sessionStart", Date.now().toString());
+
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
-    sessionStorage.setItem("sessionStart", Date.now().toString()); // ✅ Start session timer
+
+    try {
+      await fetch("/api/activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pb_user_id: userData.id,
+          date: today,
+          timeused: 0,
+          login: true,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to log login activity", err);
+    }
   };
 
   const logout = async () => {
@@ -40,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const sessionStart = start ? parseInt(start) : null;
 
     if (user && sessionStart) {
-      const sessionTime = Math.floor((Date.now() - sessionStart) / 1000); // seconds
+      const sessionTime = Math.floor((Date.now() - sessionStart) / 1000);
       const today = new Date().toISOString().split("T")[0];
 
       try {
@@ -60,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
+    // Clear storage and user
     setUser(null);
     localStorage.removeItem("user");
     sessionStorage.removeItem("sessionStart");
@@ -75,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem("user", JSON.stringify(data));
     } catch (err) {
       console.error("Failed to refresh user:", err);
-      logout(); // fallback logout
+      await logout(); // fallback
     }
   };
 
@@ -88,7 +106,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const parsed: User = JSON.parse(stored);
         setUser(parsed);
 
-        // If session start hasn't been set yet (e.g. on refresh), reinitialize
         if (!sessionStorage.getItem("sessionStart")) {
           sessionStorage.setItem("sessionStart", Date.now().toString());
         }
@@ -103,17 +120,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       router.push("/signin");
     }
   }, [pathname]);
-
-  useEffect(() => {
-    const handleBeforeUnload = async () => {
-      await logout();
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [user]);
 
   return (
     <AuthContext.Provider

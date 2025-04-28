@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   );
 
   const userid = userRes.rows[0]?.userid;
-  if (!userid) {
+  if (typeof userid === "undefined") {
     return NextResponse.json(
       { error: "User not found in PostgreSQL" },
       { status: 404 }
