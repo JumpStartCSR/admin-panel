@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       .getFirstListItem(`username="${username}"`);
     console.log(user)
     return NextResponse.json({ found: true, user });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ found: false }, { status: 404 });
   }
 }

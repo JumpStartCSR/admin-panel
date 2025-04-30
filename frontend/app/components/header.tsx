@@ -1,10 +1,8 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import { Layout, Button, Input, Dropdown, Menu } from "antd";
+import { Layout, Button, Dropdown, Menu } from "antd";
 import {
-  SearchOutlined,
-  BellOutlined,
   UserOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";

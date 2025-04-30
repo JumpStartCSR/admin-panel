@@ -1,10 +1,12 @@
-// app/api/organizations/[id]/route.ts
 import db from "@/lib/db";
 import { NextResponse } from "next/server";
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
     const { name, startDate, endDate } = await req.json();
 
     await db.query(
@@ -20,14 +22,18 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
 
     return NextResponse.json({ updated: true });
   } catch (err) {
-    console.error(`PUT /api/organizations/${await context.params.id} error:`, err);
+    const resolved = await params;
+    console.error(`PUT /api/organizations/${resolved.id} error:`, err);
     return new NextResponse("Error updating organization", { status: 500 });
   }
 }
 
-export async function DELETE(_: Request, context: { params: { id: string } }) {
+export async function DELETE(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
 
     await db.query(`DELETE FROM "organization" WHERE organizationid = $1`, [
       id,
@@ -35,7 +41,8 @@ export async function DELETE(_: Request, context: { params: { id: string } }) {
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {
-    console.error(`DELETE /api/organizations/${await context.params.id} error:`, err);
+    const resolved = await params;
+    console.error(`DELETE /api/organizations/${resolved.id} error:`, err);
     return new NextResponse("Error deleting organization", { status: 500 });
   }
 }

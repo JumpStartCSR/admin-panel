@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const groupid = parseInt(params.id);
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const groupid = parseInt(id);
 
   try {
     const result = await db.query(

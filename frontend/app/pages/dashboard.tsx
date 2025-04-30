@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Card, Avatar, Row, Col, Space, message, Spin } from "antd";
+import { Card, Avatar, Row, Col, Space, Spin } from "antd";
 import { UserOutlined, ProductOutlined } from "@ant-design/icons";
 import { useOrganization } from "../context/org-context";
 
@@ -28,7 +28,7 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messageApi, contextHolder] = message.useMessage();
+  // const [messageApi, contextHolder] = message.useMessage();
   const { organizationId } = useOrganization();
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
 
   return (
     <>
-      {contextHolder}
+      {/* {contextHolder} */}
       <h1>Welcome Home, {user.username}!</h1>
       <div className="title flex items-center justify-between mt-8 mb-4">
         <div>

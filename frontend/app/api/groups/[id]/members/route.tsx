@@ -4,9 +4,10 @@ import db from "@/lib/db";
 // GET /api/groups/[groupid]/members
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const groupid = parseInt(params.id);
+  const { id } = await params;
+  const groupid = parseInt(id);
 
   const result = await db.query(
     `
@@ -24,9 +25,10 @@ export async function GET(
 // POST /api/groups/[groupid]/members
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const groupid = await parseInt(params.id);
+  const { id } = await params;
+  const groupid = parseInt(id);
   const { userIds, role } = await req.json();
 
   if (!Array.isArray(userIds) || userIds.length === 0 || !role) {
@@ -44,14 +46,14 @@ export async function POST(
   for (const userid of userIds) {
     await db.query(
       `INSERT INTO holmz_schema.user_group (userid, groupid, group_role)
-   VALUES ($1, $2, $3)
-   ON CONFLICT (userid, groupid) DO UPDATE SET group_role = EXCLUDED.group_role`,
+       VALUES ($1, $2, $3)
+       ON CONFLICT (userid, groupid) DO UPDATE SET group_role = EXCLUDED.group_role`,
       [userid, groupid, role]
     );
 
     if (
       role === "GM" &&
-      (gmRoleId == 0 || gmRoleId == 1 || gmRoleId == 2 || gmRoleId == 3)
+      (gmRoleId === 0 || gmRoleId === 1 || gmRoleId === 2 || gmRoleId === 3)
     ) {
       const hasGMRole = await db.query(
         `SELECT 1 FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
@@ -73,14 +75,11 @@ export async function POST(
 // DELETE /api/groups/[groupid]/members/[userid]
 export async function DELETE(
   req: Request,
-  {
-    params,
-  }: {
-    params: { groupid: string; userid: string };
-  }
+  { params }: { params: Promise<{ groupid: string; userid: string }> }
 ) {
-  const groupid = parseInt(params.groupid);
-  const userid = parseInt(params.userid);
+  const { groupid, userid } = await params;
+  const groupId = parseInt(groupid);
+  const userId = parseInt(userid);
 
   const gmRoleRes = await db.query(
     `SELECT roleid FROM holmz_schema.role WHERE title = 'GM'`
@@ -90,19 +89,19 @@ export async function DELETE(
   await db.query(
     `DELETE FROM holmz_schema.user_group
      WHERE groupid = $1 AND userid = $2`,
-    [groupid, userid]
+    [groupId, userId]
   );
 
   const stillGM = await db.query(
     `SELECT 1 FROM holmz_schema.user_group
      WHERE userid = $1 AND group_role = 'GM'`,
-    [userid]
+    [userId]
   );
 
   if (stillGM.rowCount === 0) {
     await db.query(
       `DELETE FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
-      [userid, gmRoleId]
+      [userId, gmRoleId]
     );
   }
 

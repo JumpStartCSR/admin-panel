@@ -3,13 +3,14 @@ import db from "@/lib/db";
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string; userid: string } }
+  { params }: { params: Promise<{ id: string; userid: string }> }
 ) {
-  const groupid = parseInt(params.id);
-  const userid = parseInt(params.userid);
+  const { id, userid } = await params;
+  const groupid = parseInt(id);
+  const userId = parseInt(userid);
   const { role } = await req.json();
 
-  if (isNaN(groupid) || isNaN(userid) || !role) {
+  if (isNaN(groupid) || isNaN(userId) || !role) {
     return NextResponse.json(
       { error: "Invalid group ID, user ID, or role" },
       { status: 400 }
@@ -23,7 +24,7 @@ export async function PUT(
 
   const existing = await db.query(
     `SELECT group_role FROM holmz_schema.user_group WHERE groupid = $1 AND userid = $2`,
-    [groupid, userid]
+    [groupid, userId]
   );
 
   if (existing.rowCount === 0) {
@@ -53,29 +54,29 @@ export async function PUT(
   // Update group role
   await db.query(
     `UPDATE holmz_schema.user_group SET group_role = $1 WHERE groupid = $2 AND userid = $3`,
-    [role, groupid, userid]
+    [role, groupid, userId]
   );
 
   if (role === "GM") {
     const hasGMRole = await db.query(
       `SELECT 1 FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
-      [userid, gmRoleId]
+      [userId, gmRoleId]
     );
     if (hasGMRole.rowCount === 0) {
       await db.query(
         `INSERT INTO holmz_schema.user_role (userid, roleid) VALUES ($1, $2)`,
-        [userid, gmRoleId]
+        [userId, gmRoleId]
       );
     }
   } else if (oldRole === "GM") {
     const stillGM = await db.query(
       `SELECT 1 FROM holmz_schema.user_group WHERE userid = $1 AND group_role = 'GM'`,
-      [userid]
+      [userId]
     );
     if (stillGM.rowCount === 0) {
       await db.query(
         `DELETE FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
-        [userid, gmRoleId]
+        [userId, gmRoleId]
       );
     }
   }
@@ -85,12 +86,13 @@ export async function PUT(
 
 export async function DELETE(
   _: Request,
-  { params }: { params: { id: string; userid: string } }
+  { params }: { params: Promise<{ id: string; userid: string }> }
 ) {
-  const groupid = parseInt(params.id);
-  const userid = parseInt(params.userid);
+  const { id, userid } = await params;
+  const groupid = parseInt(id);
+  const userId = parseInt(userid);
 
-  if (isNaN(groupid) || isNaN(userid)) {
+  if (isNaN(groupid) || isNaN(userId)) {
     return NextResponse.json(
       { error: "Invalid group ID or user ID" },
       { status: 400 }
@@ -104,7 +106,7 @@ export async function DELETE(
 
   const roleRes = await db.query(
     `SELECT group_role FROM holmz_schema.user_group WHERE userid = $1 AND groupid = $2`,
-    [userid, groupid]
+    [userId, groupid]
   );
   const role = roleRes.rows[0]?.group_role;
 
@@ -125,18 +127,18 @@ export async function DELETE(
 
   await db.query(
     `DELETE FROM holmz_schema.user_group WHERE groupid = $1 AND userid = $2`,
-    [groupid, userid]
+    [groupid, userId]
   );
 
   if (role === "GM") {
     const stillGM = await db.query(
       `SELECT 1 FROM holmz_schema.user_group WHERE userid = $1 AND group_role = 'GM'`,
-      [userid]
+      [userId]
     );
     if (stillGM.rowCount === 0) {
       await db.query(
         `DELETE FROM holmz_schema.user_role WHERE userid = $1 AND roleid = $2`,
-        [userid, gmRoleId]
+        [userId, gmRoleId]
       );
     }
   }

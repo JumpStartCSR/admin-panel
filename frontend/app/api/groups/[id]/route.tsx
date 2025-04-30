@@ -3,9 +3,10 @@ import db from "@/lib/db";
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const groupid = parseInt(params.id);
+  const { id } = await params;
+  const groupid = parseInt(id);
   const { name, description, priority, status, managers } = await req.json();
 
   await db.query(
@@ -92,9 +93,10 @@ export async function PUT(
 
 export async function DELETE(
   _: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const groupid = parseInt(params.id);
+  const { id } = await params;
+  const groupid = parseInt(id);
 
   try {
     const gmRoleRes = await db.query(
@@ -134,8 +136,12 @@ export async function DELETE(
   }
 }
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const groupid = parseInt(params.id);
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const groupid = parseInt(id);
 
   const groupRes = await db.query(
     `SELECT name, description, priority, status, TO_CHAR(created_date, 'DD Mon, YYYY') AS created_date

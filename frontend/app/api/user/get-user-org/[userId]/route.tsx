@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   req: Request,
-  context: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
-  const { userId } = await context.params;
+  const { userId } = await params;
 
   try {
     const result = await db.query(
@@ -27,7 +27,7 @@ export async function GET(
       name: result.rows[0].name,
     });
   } catch (err) {
-    console.error("Error fetching organization info:", err);
+    console.error(`GET /api/organization-from-user/${userId} error:`, err);
     return new NextResponse("Internal server error", { status: 500 });
   }
 }

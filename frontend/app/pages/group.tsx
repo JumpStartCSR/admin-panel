@@ -60,7 +60,7 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
 
   const canCreateGroup = isSuperAdmin || isAdmin || isGM;
   const canEditDeleteGroup = isSuperAdmin || isAdmin || isGM;
-  const canInviteMember = isSuperAdmin || isAdmin || isGM;
+  // const canInviteMember = isSuperAdmin || isAdmin || isGM;
 
   const fetchGroups = async () => {
     if (typeof organizationId === "undefined") return;
