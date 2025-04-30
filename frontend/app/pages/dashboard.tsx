@@ -110,7 +110,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onKeyChange, user }) => {
                         icon={<UserOutlined />}
                         style={{ marginRight: "4px" }}
                       />
-                      {group.managers[0] || "—"}
+                      {group.managers?.[0] || "—"}
                     </div>
                   </div>
                 </Space>
