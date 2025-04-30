@@ -235,16 +235,22 @@ const Members: React.FC = () => {
       dataIndex: "roles",
       key: "roles",
       render: (roles: string[]) => {
-        const rolePriority = {
+        const rolePriority: Record<
+          "Super Admin" | "Admin" | "GM" | "Individual",
+          number
+        > = {
           "Super Admin": 1,
           Admin: 2,
           GM: 3,
           Individual: 4,
         };
 
-        const sorted = roles
-          .slice() // make a copy so we don't mutate original
-          .sort((a, b) => rolePriority[a] - rolePriority[b]);
+        const sorted = roles.slice().sort((a, b) => {
+          return (
+            (rolePriority[a as keyof typeof rolePriority] ?? Infinity) -
+            (rolePriority[b as keyof typeof rolePriority] ?? Infinity)
+          );
+        });
 
         return sorted.join(", ");
       },

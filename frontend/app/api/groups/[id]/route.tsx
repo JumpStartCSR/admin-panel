@@ -31,13 +31,13 @@ export async function PUT(
     `SELECT userid FROM holmz_schema."user" WHERE organizationid = $1`,
     [organizationid]
   );
-  const validUserIds = validUsers.rows.map((u) => u.userid);
+  const validUserIds = validUsers.rows.map((u: any) => u.userid);
 
   const oldManagerRes = await db.query(
     `SELECT userid FROM holmz_schema.user_group WHERE groupid = $1 AND group_role = 'GM'`,
     [groupid]
   );
-  const oldManagerIds = oldManagerRes.rows.map((r) => r.userid);
+  const oldManagerIds = oldManagerRes.rows.map((r: any) => r.userid);
 
   await db.query(
     `DELETE FROM holmz_schema.user_group WHERE groupid = $1 AND group_role = 'GM'`,
@@ -109,7 +109,7 @@ export async function DELETE(
       `SELECT userid FROM holmz_schema.user_group WHERE groupid = $1 AND group_role = 'GM'`,
       [groupid]
     );
-    const gmUserIds = gmUsersRes.rows.map((r) => r.userid);
+    const gmUserIds = gmUsersRes.rows.map((r: any) => r.userid);
 
     await db.query(`DELETE FROM holmz_schema."group" WHERE groupid = $1`, [
       groupid,
@@ -163,7 +163,7 @@ export async function GET(
     [groupid]
   );
 
-  const managers = managerRes.rows.map((row) => row.name);
+  const managers = managerRes.rows.map((row: any) => row.name);
 
   return NextResponse.json({
     ...group,

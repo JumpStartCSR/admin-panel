@@ -32,11 +32,9 @@ const ActivityTracker = () => {
           )
         );
       }
-
-      // Clear storage manually
       localStorage.removeItem("user");
       sessionStorage.removeItem("sessionStart");
-      
+
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);

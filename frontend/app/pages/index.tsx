@@ -28,7 +28,6 @@ const App: React.FC = () => {
           Layout: {
             headerBg: "#ffffff",
             siderBg: "#ffffff",
-            contentBg: "#ffffff",
             bodyBg: "#ffffff",
             colorBgLayout: "#ffffff",
           },
@@ -44,17 +43,14 @@ const App: React.FC = () => {
                 <Members />
               ) : selectedKey === "groups" ? (
                 selectedGroupId ? (
-                  <GroupDetail
-                    groupId={selectedGroupId}
-                    onBack={() => setSelectedGroupId(null)}
-                  />
+                  <GroupDetail />
                 ) : (
                   <Groups
                     onViewDetail={(id: number) => setSelectedGroupId(id)}
                   />
                 )
               ) : selectedKey === "organizations" ? (
-                <Organizations user={user!} />
+                <Organizations/>
               ) : (
                 <Dashboard onKeyChange={setSelectedKey} user={user!} />
               )}

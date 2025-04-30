@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     `SELECT userid FROM holmz_schema."user" WHERE organizationid = $1`,
     [organizationid]
   );
-  const validUserIds = validUsers.rows.map((u) => u.userid);
+  const validUserIds = validUsers.rows.map((u: any) => u.userid);
 
   for (const userid of managers || []) {
     if (!validUserIds.includes(userid)) continue;

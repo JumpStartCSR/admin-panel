@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ roles: [] });
     }
 
-    const roles = result.rows.map((row) => row.title);
+    const roles = result.rows.map((row: any) => row.title);
     return NextResponse.json({ roles });
   } catch (err) {
     console.error("Role fetch error:", err);
