@@ -26,7 +26,7 @@ export async function PUT(
       [userid]
     );
 
-    if (stillManaging.rowCount > 0) {
+    if ((stillManaging?.rowCount ?? 0) > 0) {
       return NextResponse.json(
         {
           error:

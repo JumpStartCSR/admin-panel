@@ -24,7 +24,11 @@ import {
 import type { TableProps } from "antd";
 import { useOrganization } from "@/app/context/org-context";
 import { useAuth } from "@/app/context/auth-context";
-import { useParams, useRouter } from "next/navigation";
+
+interface GroupDetailProps {
+  groupId: number;
+  onBack: () => void;
+}
 
 interface GroupData {
   name: string;
@@ -42,10 +46,7 @@ interface MemberData {
   role: "GM" | "Member";
 }
 
-const GroupDetail: React.FC = () => {
-  const params = useParams();
-  const router = useRouter();
-  const groupId = Array.isArray(params?.id) ? params.id[0] : params?.id || "";
+const GroupDetail: React.FC<GroupDetailProps> = ({ groupId, onBack }) => {
   const [group, setGroup] = useState<GroupData | null>(null);
   const [members, setMembers] = useState<MemberData[]>([]);
   const [orgMembers, setOrgMembers] = useState<MemberData[]>([]);
@@ -296,7 +297,7 @@ const GroupDetail: React.FC = () => {
       {contextHolder}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-4">
-          <Button onClick={() => router.back()}>← Back</Button>
+          <Button onClick={onBack}>← Back</Button>
           <h2 className="text-xl font-semibold">{group?.name}</h2>
         </div>
         <Button
@@ -349,7 +350,7 @@ const GroupDetail: React.FC = () => {
               <strong>Name:</strong> {group?.name}
             </p>
             <p>
-              <strong>Manager:</strong> {group?.managers?.join(", ") || "None"}
+              <strong>Manager:</strong> {group?.managers.join(", ") || "None"}
             </p>
             <p>
               <strong>Priority:</strong> {group?.priority}

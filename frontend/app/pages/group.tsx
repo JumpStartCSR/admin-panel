@@ -56,7 +56,6 @@ const Groups: React.FC<GroupsProps> = ({ onViewDetail }) => {
   const isSuperAdmin = currentUserRoles.includes("Super Admin");
   const isAdmin = currentUserRoles.includes("Admin");
   const isGM = currentUserRoles.includes("GM");
-  console.log(currentUserRoles)
 
   const canCreateGroup = isSuperAdmin || isAdmin || isGM;
   const canEditDeleteGroup = isSuperAdmin || isAdmin || isGM;

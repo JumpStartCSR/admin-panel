@@ -43,7 +43,10 @@ const App: React.FC = () => {
                 <Members />
               ) : selectedKey === "groups" ? (
                 selectedGroupId ? (
-                  <GroupDetail />
+                  <GroupDetail
+                    groupId={selectedGroupId}
+                    onBack={() => setSelectedGroupId(null)}
+                  />
                 ) : (
                   <Groups
                     onViewDetail={(id: number) => setSelectedGroupId(id)}
