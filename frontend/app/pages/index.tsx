@@ -5,7 +5,7 @@ import Header from "../components/header";
 import Sider from "../components/sider";
 import Members from "./member";
 import Groups from "./group";
-import GroupDetail from "../group/detail/[id]/page";
+import GroupDetail from "./groupDetail";
 import Dashboard from "./dashboard";
 import Organizations from "./organization";
 import { useAuth } from "../context/auth-context";
