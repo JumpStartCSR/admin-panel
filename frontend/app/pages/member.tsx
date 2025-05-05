@@ -31,6 +31,7 @@ interface DataType {
   dateadded: string;
   lastactive: string;
   totallogins: number;
+  totaltimeused: number;
 }
 
 const Members: React.FC = () => {
@@ -261,10 +262,16 @@ const Members: React.FC = () => {
     { title: "Date Added", dataIndex: "dateadded", key: "dateadded" },
     { title: "Last Active", dataIndex: "lastactive", key: "lastactive" },
     {
-      title: "Total Logins",
+      title: "Total Admin Panel Logins",
       dataIndex: "totallogins",
       key: "totallogins",
       render: (val) => val ?? "—",
+    },
+    {
+      title: "Total Admin Panel Duration",
+      dataIndex: "totaltimeused",
+      key: "totaltimeused",
+      render: (val) => (val ? `${Math.round(val / 60)} min` : "—"),
     },
     {
       title: "Controls",

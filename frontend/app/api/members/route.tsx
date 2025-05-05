@@ -14,17 +14,21 @@ export async function GET(req: Request) {
       u.status,
       TO_CHAR(u.dateadded, 'DD Mon, YYYY') AS dateadded,
       COALESCE(
-      TO_CHAR(
-        latest_log.latest_activity AT TIME ZONE 'UTC' AT TIME ZONE 'America/Los_Angeles',
-        'DD Mon, YYYY'),'—') AS lastactive,
+        TO_CHAR(
+          latest_log.latest_activity AT TIME ZONE 'UTC' AT TIME ZONE 'America/Los_Angeles',
+          'DD Mon, YYYY HH24:MI'
+        ),
+        '—'
+      ) AS lastactive,
       latest_log.loginsperday,
       latest_log.timeusedperday,
-      total_log.totallogins
+      total_log.totallogins,
+      total_log.totaltimeused
     FROM "user" u
     LEFT JOIN "user_role" ur ON u.userid = ur.userid
     LEFT JOIN "role" r ON ur.roleid = r.roleid
 
-    -- latest activity log per user
+    -- latest activity per user
     LEFT JOIN (
       SELECT DISTINCT ON (userid)
         userid,
@@ -35,9 +39,12 @@ export async function GET(req: Request) {
       ORDER BY userid, created_at DESC
     ) latest_log ON u.userid = latest_log.userid
 
-    -- total logins summed across all days
+    -- total aggregates
     LEFT JOIN (
-      SELECT userid, SUM(loginsperday)::INTEGER AS totallogins
+      SELECT
+        userid,
+        SUM(loginsperday)::INTEGER AS totallogins,
+        SUM(timeusedperday)::INTEGER AS totaltimeused
       FROM user_activity_log
       GROUP BY userid
     ) total_log ON u.userid = total_log.userid
@@ -46,7 +53,7 @@ export async function GET(req: Request) {
     GROUP BY
       u.userid, u.name, u.email, u.status, u.dateadded,
       latest_log.latest_activity, latest_log.loginsperday, latest_log.timeusedperday,
-      total_log.totallogins
+      total_log.totallogins, total_log.totaltimeused
     ORDER BY u.userid ASC
   `;
 
