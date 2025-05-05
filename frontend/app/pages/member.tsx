@@ -29,7 +29,8 @@ interface DataType {
   roles: string[];
   status: string;
   dateadded: string;
-  lastActive: string;
+  lastactive: string;
+  totallogins: number;
 }
 
 const Members: React.FC = () => {
@@ -61,6 +62,7 @@ const Members: React.FC = () => {
   const fetchMembers = async () => {
     const res = await fetch(`/api/members?organizationId=${organizationId}`);
     const members = await res.json();
+    console.log(members)
     setData(members);
   };
 
@@ -257,6 +259,13 @@ const Members: React.FC = () => {
     },
     { title: "Status", dataIndex: "status", key: "status" },
     { title: "Date Added", dataIndex: "dateadded", key: "dateadded" },
+    { title: "Last Active", dataIndex: "lastactive", key: "lastactive" },
+    {
+      title: "Total Logins",
+      dataIndex: "totallogins",
+      key: "totallogins",
+      render: (val) => val ?? "—",
+    },
     {
       title: "Controls",
       key: "controls",
